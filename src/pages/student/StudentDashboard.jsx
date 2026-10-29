@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { StudentNav } from '../../components/layout.jsx';
 import { Avatar, Button, Card, Icon, Stat, StatusChip } from '../../components/ui.jsx';
-import { mentorById, mentors, studentSessions } from '../../data/mock.js';
+import { mentorById, mentors, student, studentSessions } from '../../data/mock.js';
+import { useProfile } from '../../lib/profile.js';
 
 const upcoming = studentSessions.filter((s) => s.status === 'Confirmed');
 const requests = [
@@ -11,13 +12,19 @@ const requests = [
 ];
 const saved = ['rami', 'mira', 'jad'].map(mentorById);
 
+const greeting = () => {
+  const hour = new Date().getHours();
+  return hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+};
+
 export default function StudentDashboard() {
+  const me = useProfile({ name: student.name });
   return (
     <>
       <StudentNav />
       <div className="container page col gap-28">
         <div className="row between">
-          <div className="col gap-6"><h1 className="h1">Good evening, Sarah</h1><p className="lead muted">Here’s what’s happening with your mentorship today.</p></div>
+          <div className="col gap-6"><h1 className="h1">{greeting()}{me ? `, ${me.name.split(' ')[0]}` : ''}</h1><p className="lead muted">Here’s what’s happening with your mentorship today.</p></div>
           <Button to="/mentors" icon="Search">Find a mentor</Button>
         </div>
 

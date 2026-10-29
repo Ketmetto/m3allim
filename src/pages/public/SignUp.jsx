@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '../../components/layout.jsx';
 import { GoogleButton, RolePicker } from '../../components/auth.jsx';
-import { Button, Checkbox, Field, Icon, Input, PasswordInput, Select } from '../../components/ui.jsx';
+import { Button, Checkbox, Field, Icon, Input, PasswordInput, PhotoPicker, Select } from '../../components/ui.jsx';
 import { fields } from '../../data/mock.js';
 import { supabase } from '../../lib/supabase.js';
 import { destinationFor, resendVerification, signInWithGoogle, signUpWithEmail } from '../../lib/auth.js';
+import { savePendingPhoto, squarePhoto } from '../../lib/profile.js';
 
 const UNIVERSITIES = ['AUB', 'LAU', 'USJ', 'LU', 'USEK', 'NDU', 'BAU', 'Other'];
 
@@ -17,6 +18,7 @@ export default function SignUp() {
   const [password, setPassword] = useState('');
   const [school, setSchool] = useState(UNIVERSITIES[0]);
   const [field, setField] = useState(fields[0]);
+  const [photo, setPhotoData] = useState(null); // resized JPEG data URL
   const [agree, setAgree] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -24,6 +26,14 @@ export default function SignUp() {
   const [sentTo, setSentTo] = useState('');
 
   const edit = (setter) => (e) => { setter(e.target.value); setError(''); };
+  const pickPhoto = async (file) => {
+    try {
+      setPhotoData(await squarePhoto(file));
+      setError('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -40,6 +50,8 @@ export default function SignUp() {
     if (err) return setError(err.message);
     // Supabase returns a user with no identities when the email is already registered.
     if (!data.user?.identities?.length) return setError('An account with this email already exists. Log in instead.');
+    // The photo is uploaded on first sign-in, once the email is verified.
+    if (photo) savePendingPhoto(email.trim(), photo);
     if (data.session) return navigate(await destinationFor(data.user));
     setSentTo(email.trim());
   };
@@ -86,6 +98,10 @@ export default function SignUp() {
       <GoogleButton onClick={google}>Sign up with Google</GoogleButton>
       <div className="auth-divider"><span>or sign up with email</span></div>
       <form className="col gap-20" onSubmit={submit} noValidate>
+        <div className="field">
+          <span className="field-label">Profile photo</span>
+          <PhotoPicker name={name} src={photo} onPick={pickPhoto} onRemove={() => setPhotoData(null)} />
+        </div>
         <Field label="Full name">
           <Input autoComplete="name" value={name} onChange={edit(setName)} placeholder="Sarah Mansour" />
         </Field>

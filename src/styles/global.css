@@ -352,6 +352,10 @@ input, select, textarea { font: inherit; color: inherit; }
 .file-input input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .file-input .medium { color: var(--ink); }
 .icon-btn { background: none; border: 0; padding: 4px; color: inherit; display: inline-flex; }
+.photo-btn { position: relative; cursor: pointer; }
+.photo-btn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.nav-profile:hover .semibold { color: var(--teal); }
+.sidebar-profile a:hover .semibold { text-decoration: underline; }
 
 /* ============ Responsive ============ */
 @media (max-width: 1100px) {

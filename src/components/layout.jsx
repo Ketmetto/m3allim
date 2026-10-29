@@ -3,6 +3,15 @@ import { Avatar, Button, Icon, Logo } from './ui.jsx';
 import { student, superAdmin } from '../data/mock.js';
 import { usePendingCount } from '../data/applications.js';
 import { supabase } from '../lib/supabase.js';
+import { useProfile } from '../lib/profile.js';
+
+function useLogOut() {
+  const navigate = useNavigate();
+  return async () => {
+    await supabase?.auth.signOut();
+    navigate('/');
+  };
+}
 
 /* ---------- Public navigation (guest) ---------- */
 export function PublicNav() {
@@ -28,6 +37,8 @@ export function PublicNav() {
 
 /* ---------- Student navigation (logged in) ---------- */
 export function StudentNav() {
+  const me = useProfile({ name: student.name, avatar: student.photo, university: student.school });
+  const logOut = useLogOut();
   return (
     <header className="nav">
       <div className="container nav-inner">
@@ -41,14 +52,18 @@ export function StudentNav() {
             <Icon name="Bell" size={18} />
             <span className="notif-dot" />
           </button>
-          <div className="row gap-10">
-            <Avatar name={student.name} src={student.photo} size={40} />
-            <div className="col">
-              <span className="semibold">{student.name}</span>
-              <span className="xs muted">Student · {student.school}</span>
+          {me && (
+            <div className="row gap-10">
+              <Link to="/account" className="row gap-10 nav-profile" title="Your profile">
+                <Avatar name={me.name} src={me.avatar} size={40} />
+                <div className="col">
+                  <span className="semibold">{me.name}</span>
+                  <span className="xs muted">{me.university ? `Student · ${me.university}` : 'Student'}</span>
+                </div>
+              </Link>
+              <button className="icon-btn muted" aria-label="Log out" title="Log out" onClick={logOut}><Icon name="LogOut" size={16} /></button>
             </div>
-            <Icon name="ChevronDown" size={16} />
-          </div>
+          )}
         </nav>
       </div>
     </header>
@@ -143,12 +158,9 @@ export function AdminShell({ kind = 'admin', title, sub, actions, children }) {
   const sup = kind === 'super';
   const items = sup ? SUPER_ITEMS : ADMIN_ITEMS;
   const pending = usePendingCount();
-  const navigate = useNavigate();
+  const me = useProfile({ name: sup ? superAdmin.name : 'Rana Khalil' });
+  const logOut = useLogOut();
   const badgeOf = (it) => (it.badge === 'pending' ? pending : it.badge);
-  const logOut = async () => {
-    await supabase?.auth.signOut();
-    navigate('/');
-  };
   return (
     <div className={`shell ${sup ? 'shell-super' : ''}`}>
       <aside className="sidebar">
@@ -166,11 +178,13 @@ export function AdminShell({ kind = 'admin', title, sub, actions, children }) {
         </nav>
         <div className="fill" />
         <div className="sidebar-profile">
-          <Avatar name={sup ? superAdmin.name : 'Rana Khalil'} size={38} />
-          <div className="col fill">
-            <span className="semibold">{sup ? superAdmin.name : 'Rana Khalil'}</span>
-            <span className="xs">{sup ? 'Super admin' : 'Platform admin'}</span>
-          </div>
+          <Link to="/account" className="row gap-12 fill min0" title="Your profile">
+            <Avatar name={me?.name || ' '} src={me?.avatar} size={38} />
+            <div className="col fill min0">
+              <span className="semibold truncate">{me?.name}</span>
+              <span className="xs">{sup ? 'Super admin' : 'Platform admin'}</span>
+            </div>
+          </Link>
           <button className="icon-btn" aria-label="Log out" onClick={logOut}><Icon name="LogOut" size={16} /></button>
         </div>
       </aside>
