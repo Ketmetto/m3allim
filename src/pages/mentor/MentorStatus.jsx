@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '../../components/layout.jsx';
-import { Button, Icon, StatusChip } from '../../components/ui.jsx';
+import { Button, Icon, Person, StatusChip } from '../../components/ui.jsx';
+import { useProfile } from '../../lib/profile.js';
 import { myApplication } from '../../data/applications.js';
 import { supabase } from '../../lib/supabase.js';
 import { useSession } from '../../lib/auth.js';
@@ -16,6 +17,7 @@ export default function MentorStatus() {
   const navigate = useNavigate();
   const session = useSession();
   const [app, setApp] = useState();
+  const me = useProfile();
 
   useEffect(() => {
     if (session) myApplication(session.user.id).then(setApp);
@@ -34,6 +36,7 @@ export default function MentorStatus() {
 
   return (
     <AuthLayout title={copy.title} sub={copy.text(app)}>
+      {me && <div className="row between"><Person name={me.name} sub={me.email} src={me.avatar} size={48} /><Link to="/account" className="link">Edit profile</Link></div>}
       <div className="card col gap-16" style={{ padding: 24 }}>
         <div className="row between"><span className="row gap-10 semibold"><Icon name={copy.icon} size={20} color="var(--teal)" />Mentor application</span><StatusChip status={app.status === 'Rejected' ? 'Declined' : app.status} /></div>
         <hr className="hr" />

@@ -26,6 +26,7 @@ Open `http://localhost:5173/#/screens` for an index of every screen.
 | Account | `/login`, `/signup` | Log in / sign up (email + Google) |
 | Account | `/welcome` | Pick student or mentor (first Google sign-in) |
 | Account | `/reset-password` | Set a new password (from the reset email) |
+| Account | `/account` | Your profile: name and photo (opens from your name in the navigation) |
 | Mentor | `/mentor/apply` | Mentor application: phone, emails, CV, cover letter |
 | Mentor | `/mentor/status` | Application status |
 | Student | `/student` | Dashboard |
@@ -67,7 +68,7 @@ supabase/schema.sql       database tables, file bucket and access rules
 About 15 minutes, once.
 
 1. **Create a project** at [supabase.com](https://supabase.com) (free plan is fine).
-2. **Create the database.** Open *SQL Editor*, paste all of [`supabase/schema.sql`](supabase/schema.sql) and click *Run*. It creates the tables, the private `mentor-docs` file bucket and the access rules. The super admin email (`kitmittofam@gmail.com`) is set near the top of that file and in `superAdmin` in `src/data/mock.js`; keep them the same.
+2. **Create the database.** Open *SQL Editor*, paste all of [`supabase/schema.sql`](supabase/schema.sql) and click *Run*. It creates the tables, the private `mentor-docs` bucket (CVs and cover letters), the public `avatars` bucket (profile photos) and the access rules. The super admin email (`kitmittofam@gmail.com`) is set near the top of that file and in `superAdmin` in `src/data/mock.js`; keep them the same.
 3. **Connect the site.** Copy `.env.example` to `.env.local` and fill in *Project URL* and the *anon public* key from *Project settings → API*. Restart `npm run dev`.
 4. **Allow the redirect.** *Authentication → URL Configuration*: set *Site URL* to `http://localhost:5173` and add `http://localhost:5173/**` to *Redirect URLs*. Add your real domain too when you deploy.
 5. **Email verification** is on by default (*Authentication → Sign In / Providers → Email → Confirm email*). Supabase's built-in sender only allows a few emails per hour, so before launch add your own SMTP under *Authentication → Emails → SMTP settings* (for example Resend, or Gmail with an app password).
@@ -77,6 +78,10 @@ About 15 minutes, once.
    - *Authorized redirect URIs*: `https://<your-project-id>.supabase.co/auth/v1/callback` (Supabase shows this exact URL on the Google provider page).
    - Paste the Client ID and Client secret into Supabase *Authentication → Sign In / Providers → Google* and enable it.
 
+### Names and profile photos
+
+Google sign-ins get their Google name and picture automatically. Email sign-ups can add a photo on the sign-up form; it is cropped to a 400×400 square in the browser and uploaded on their first sign-in (after the email is verified). Anyone can change their name or photo later on `/account`.
+
 ### How the mentor flow works
 
 1. A mentor signs up with email (and clicks the verification link) or with Google (already verified).
@@ -85,6 +90,17 @@ About 15 minutes, once.
 4. The mentor sees the result on `/mentor/status`.
 
 Only emails listed in the `super_admins` table can read applications or documents; the database enforces this, not just the website.
+
+## Deploy on Render
+
+**Static Site (recommended, free, never sleeps):** New → Static Site → this repo.
+- Build command: `npm install && npm run build`
+- Publish directory: `dist`
+- Environment: add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (same values as `.env.local`).
+
+**Web Service (also works):** Start command `npm start` builds the site and serves it on Render's `PORT`. Add the same two environment variables. On the free plan a web service sleeps after 15 minutes without visitors and takes about a minute to wake up.
+
+After the first deploy, add the site address (for example `https://m3allim.onrender.com/**`) to Supabase → Authentication → URL Configuration → Redirect URLs, or sign-in links will not return to the live site.
 
 ## Design tokens
 
@@ -97,7 +113,7 @@ Avatars fall back to initials. To show photos, add files to `public/avatars/`: `
 ## Not built yet
 
 - Mentor interface (profile builder, availability, accept / decline requests). It has no Figma screens yet.
-- Student pages, browsing and booking still use sample data (the student dashboard always shows Sarah Mansour). Approved mentors don’t appear in *Find a mentor* yet.
+- Student sessions, messages, browsing and booking still use sample data (the student’s own name and photo are real). Approved mentors don’t appear in *Find a mentor* yet.
 - Admin roles other than the super admin (the admin pages are limited to the super admin once Supabase is connected).
 - Arabic / RTL version.
 - The profile, browse and landing copy was rebuilt from the Figma file and may differ slightly from the original wording.

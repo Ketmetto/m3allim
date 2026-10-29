@@ -23,8 +23,10 @@ create table if not exists public.profiles (
   role text check (role in ('student', 'mentor')),
   university text,
   field text,
+  avatar_url text,
   created_at timestamptz not null default now()
 );
+alter table public.profiles add column if not exists avatar_url text; -- for projects created before photos
 alter table public.profiles enable row level security;
 
 drop policy if exists "read own profile" on public.profiles;
@@ -40,13 +42,15 @@ returns trigger
 language plpgsql security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, full_name, role, university, field)
+  insert into public.profiles (id, full_name, role, university, field, avatar_url)
   values (
     new.id,
     coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name'),
     new.raw_user_meta_data ->> 'role',
     new.raw_user_meta_data ->> 'university',
-    new.raw_user_meta_data ->> 'field'
+    new.raw_user_meta_data ->> 'field',
+    -- Google sends the account picture; email sign-ups add theirs after verifying
+    coalesce(new.raw_user_meta_data ->> 'avatar_url', new.raw_user_meta_data ->> 'picture')
   )
   on conflict (id) do nothing;
   return new;
@@ -103,3 +107,34 @@ create policy "mentors upload own docs" on storage.objects for insert to authent
 drop policy if exists "read own docs or all as super admin" on storage.objects;
 create policy "read own docs or all as super admin" on storage.objects for select to authenticated
   using (bucket_id = 'mentor-docs' and ((storage.foldername(name))[1] = auth.uid()::text or public.is_super_admin()));
+
+-- Lets the super admin's review list show each applicant's profile photo.
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'mentor_applications_profile_fkey') then
+    alter table public.mentor_applications
+      add constraint mentor_applications_profile_fkey foreign key (user_id) references public.profiles (id) on delete cascade;
+  end if;
+end $$;
+
+-- ---------- Profile photos (public bucket) ----------
+-- Anyone can view photos; each person can only add, replace or delete files in <user id>/.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 2097152, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do nothing;
+
+drop policy if exists "list own avatars" on storage.objects;
+create policy "list own avatars" on storage.objects for select to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+drop policy if exists "upload own avatar" on storage.objects;
+create policy "upload own avatar" on storage.objects for insert to authenticated
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+drop policy if exists "delete own avatars" on storage.objects;
+create policy "delete own avatars" on storage.objects for delete to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Fill in names and Google pictures for accounts created before this existed.
+update public.profiles p
+set avatar_url = coalesce(p.avatar_url, u.raw_user_meta_data ->> 'avatar_url', u.raw_user_meta_data ->> 'picture'),
+    full_name = coalesce(p.full_name, u.raw_user_meta_data ->> 'full_name', u.raw_user_meta_data ->> 'name')
+from auth.users u
+where u.id = p.id and (p.avatar_url is null or p.full_name is null);

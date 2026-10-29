@@ -77,7 +77,7 @@ export default function Verification({ kind = 'admin' }) {
   };
 
   const cols = [
-    { key: 'name', label: 'APPLICANT', render: (r) => <Person name={r.name} sub={r.headline} /> },
+    { key: 'name', label: 'APPLICANT', render: (r) => <Person name={r.name} sub={r.headline} src={r.avatar} /> },
     { key: 'field', label: 'FIELD', width: 110 },
     { key: 'submitted', label: 'SUBMITTED', width: 110 },
     { key: 'status', label: 'STATUS', width: 110, render: (r) => <StatusChip status={r.status} /> },
@@ -109,7 +109,7 @@ export default function Verification({ kind = 'admin' }) {
         {selected && (
           <Card pad={28} className="col gap-20 panel">
             <div className="row between"><h2 className="h3">Application review</h2><StatusChip status={selected.status} /></div>
-            <div className="row gap-14"><Avatar name={selected.name} size={60} /><div className="col gap-4 min0"><span className="h3">{selected.name}</span><span className="sm muted">{selected.headline}</span></div></div>
+            <div className="row gap-14"><Avatar name={selected.name} src={selected.avatar} size={60} /><div className="col gap-4 min0"><span className="h3">{selected.name}</span><span className="sm muted">{selected.headline}</span></div></div>
             <div className="col gap-10 sm">
               {details.map(([k, v]) => <div key={k} className="row between gap-12"><span className="muted">{k}</span><span className="medium truncate">{v}</span></div>)}
               <div className="row between gap-12"><span className="muted">LinkedIn</span>{linkedinUrl ? <a className="medium text-teal truncate" href={linkedinUrl} target="_blank" rel="noreferrer">{selected.linkedin}</a> : <span className="medium">{selected.linkedin}</span>}</div>

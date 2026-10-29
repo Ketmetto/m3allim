@@ -21,11 +21,12 @@ export function Logo({ light = false, to = '/' }) {
 
 /* Avatar shows a photo if the file exists, otherwise the person's initials. */
 export function Avatar({ name, src, size = 40 }) {
-  const [broken, setBroken] = useState(false);
+  const [brokenSrc, setBrokenSrc] = useState(null);
   const initials = name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
   const style = { width: size, height: size, fontSize: Math.round(size * 0.36) };
-  if (src && !broken) {
-    return <img className="avatar" style={style} src={src} alt={name} onError={() => setBroken(true)} />;
+  if (src && src !== brokenSrc) {
+    // no-referrer: Google profile pictures can refuse requests that send a referrer.
+    return <img className="avatar" style={style} src={src} alt={name} referrerPolicy="no-referrer" onError={() => setBrokenSrc(src)} />;
   }
   return <span className="avatar avatar-initials" style={style} aria-label={name}>{initials}</span>;
 }
@@ -153,6 +154,23 @@ export function PasswordInput(props) {
     </span>
   );
 }
+/* Profile photo with change / remove controls. onPick receives the chosen image file. */
+export function PhotoPicker({ name, src, onPick, onRemove, size = 72 }) {
+  return (
+    <div className="row gap-16">
+      <Avatar name={name || ''} src={src} size={size} />
+      <div className="col gap-6 start">
+        <label className="btn btn-outline btn-sm photo-btn">
+          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) onPick(f); }} />
+          <Icon name="Upload" size={14} />
+          {src ? 'Change photo' : 'Add a photo'}
+        </label>
+        {src && onRemove ? <button type="button" className="link" onClick={onRemove}>Remove photo</button> : <span className="xs muted">Optional · JPG, PNG or WebP</span>}
+      </div>
+    </div>
+  );
+}
+
 /* File picker that shows the chosen file. accept: e.g. ".pdf,.doc,.docx" */
 export function FileInput({ file, onChange, accept, label = 'Choose a file' }) {
   return (

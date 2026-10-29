@@ -10,6 +10,7 @@ import SignIn from './pages/public/SignIn.jsx';
 import SignUp from './pages/public/SignUp.jsx';
 import Welcome from './pages/public/Welcome.jsx';
 import ResetPassword from './pages/public/ResetPassword.jsx';
+import Account from './pages/public/Account.jsx';
 
 import MentorApply from './pages/mentor/MentorApply.jsx';
 import MentorStatus from './pages/mentor/MentorStatus.jsx';
@@ -56,15 +57,16 @@ export default function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/account" element={<Account />} />
 
         {/* Mentor onboarding */}
         <Route path="/mentor/apply" element={<MentorApply />} />
         <Route path="/mentor/status" element={<MentorStatus />} />
 
         {/* Student */}
-        <Route path="/student" element={<StudentDashboard />} />
-        <Route path="/student/sessions" element={<MySessions />} />
-        <Route path="/student/messages" element={<Messages />} />
+        <Route path="/student" element={<RequireAuth><StudentDashboard /></RequireAuth>} />
+        <Route path="/student/sessions" element={<RequireAuth><MySessions /></RequireAuth>} />
+        <Route path="/student/messages" element={<RequireAuth><Messages /></RequireAuth>} />
 
         {/* Admin */}
         <Route path="/admin" element={<RequireAuth superAdmin><AdminOverview /></RequireAuth>} />

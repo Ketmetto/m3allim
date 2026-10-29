@@ -39,6 +39,7 @@ const fileName = (path) => path.split('/').pop().replace(/^\d+-/, '');
 const fromRow = (r) => ({
   id: r.id,
   name: r.full_name,
+  avatar: r.profiles?.avatar_url,
   email: r.email,
   altEmail: r.alt_email,
   phone: r.phone,
@@ -56,7 +57,7 @@ const fromRow = (r) => ({
 /* ---------- API used by the pages ---------- */
 export async function listApplications() {
   if (!supabase) return loadLocal();
-  const { data, error } = await supabase.from('mentor_applications').select('*').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('mentor_applications').select('*, profiles(avatar_url)').order('created_at', { ascending: false });
   if (error) throw error;
   return data.map(fromRow);
 }
