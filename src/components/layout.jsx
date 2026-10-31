@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { Avatar, Button, Icon, Logo } from './ui.jsx';
 import { student, superAdmin } from '../data/mock.js';
@@ -5,7 +6,7 @@ import { usePendingCount } from '../data/applications.js';
 import { supabase } from '../lib/supabase.js';
 import { useProfile } from '../lib/profile.js';
 import { destinationFor, isSuperAdminEmail } from '../lib/auth.js';
-import { useOpenReportsCount } from '../data/mentorship.js';
+import { useOpenReportsCount, useUnreadCount } from '../data/mentorship.js';
 
 function useLogOut() {
   const navigate = useNavigate();
@@ -13,6 +14,58 @@ function useLogOut() {
     await supabase?.auth.signOut();
     navigate('/');
   };
+}
+
+/* ---------- Taskbar (phones): fixed bottom navigation, depends on who is signed in ---------- */
+function tabsFor(me) {
+  if (!me) return [
+    { to: '/', end: true, icon: 'Home', label: 'Home' },
+    { to: '/mentors', icon: 'Search', label: 'Mentors' },
+    { to: '/login', icon: 'User', label: 'Log in' },
+    { to: '/signup', icon: 'UserPlus', label: 'Join' },
+  ];
+  if (isSuperAdminEmail(me.email)) return [
+    { to: '/super', icon: 'LayoutDashboard', label: 'Admin' },
+    { to: '/super/verification', icon: 'BadgeCheck', label: 'Verify' },
+    { to: '/super/reports', icon: 'Flag', label: 'Reports' },
+    { to: '/mentors', icon: 'Search', label: 'Mentors' },
+    { to: '/account', icon: 'User', label: 'Profile' },
+  ];
+  if (me.role === 'mentor') return [
+    { to: '/mentor', end: true, icon: 'Home', label: 'Home' },
+    { to: '/mentor/messages', icon: 'MessageCircle', label: 'Messages', unread: true },
+    { to: `/mentors/${me.user.id}`, icon: 'BadgeCheck', label: 'My page' },
+    { to: '/account', icon: 'User', label: 'Profile' },
+  ];
+  return [
+    { to: '/student', end: true, icon: 'Home', label: 'Home' },
+    { to: '/mentors', icon: 'Search', label: 'Mentors' },
+    { to: '/student/sessions', icon: 'Calendar', label: 'Sessions' },
+    { to: '/student/messages', icon: 'MessageCircle', label: 'Messages', unread: true },
+    { to: '/account', icon: 'User', label: 'Profile' },
+  ];
+}
+
+export function TabBar() {
+  const me = useProfile();
+  const unread = useUnreadCount();
+  if (me === undefined) return null;
+  return (
+    <nav className="tabbar" aria-label="Quick navigation">
+      {tabsFor(me).map((t) => (
+        <NavLink key={t.to} to={t.to} end={t.end} className="tab-item">
+          <span className="tab-icon"><Icon name={t.icon} size={22} />{t.unread && unread > 0 && <span className="tab-badge">{unread > 9 ? '9+' : unread}</span>}</span>
+          <span>{t.label}</span>
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
+
+/* Right side of the top bar on phones, where the links are replaced by the taskbar. */
+function MobileNavEnd({ me }) {
+  if (me) return <Link to="/account" className="nav-mobile" aria-label="Your profile"><Avatar name={me.name} src={me.avatar} size={36} /></Link>;
+  return <Button to="/login" size="sm" className="nav-mobile">Log in</Button>;
 }
 
 /* ---------- Public navigation (guest) ---------- */
@@ -24,7 +77,8 @@ export function PublicNav() {
     <header className="nav">
       <div className="container nav-inner">
         <Logo />
-        <nav className="row gap-32" aria-label="Main">
+        <MobileNavEnd me={me} />
+        <nav className="row gap-32 nav-links" aria-label="Main">
           <NavLink to="/" end className="nav-link">Home</NavLink>
           <NavLink to="/mentors" className="nav-link">Find a mentor</NavLink>
           <button className="nav-link nav-btn" onClick={() => go('how')}>How it works</button>
@@ -40,6 +94,7 @@ export function PublicNav() {
           )}
         </nav>
       </div>
+      <TabBar />
     </header>
   );
 }
@@ -52,7 +107,8 @@ export function StudentNav() {
     <header className="nav">
       <div className="container nav-inner">
         <Logo to="/student" />
-        <nav className="row gap-32" aria-label="Student">
+        {me && <MobileNavEnd me={me} />}
+        <nav className="row gap-32 nav-links" aria-label="Student">
           <NavLink to="/student" end className="nav-link">Dashboard</NavLink>
           <NavLink to="/mentors" className="nav-link">Find a mentor</NavLink>
           <NavLink to="/student/sessions" className="nav-link">My sessions</NavLink>
@@ -75,6 +131,7 @@ export function StudentNav() {
           )}
         </nav>
       </div>
+      <TabBar />
     </header>
   );
 }
@@ -117,7 +174,8 @@ export function MentorNav() {
     <header className="nav">
       <div className="container nav-inner">
         <Logo to="/mentor" />
-        <nav className="row gap-32" aria-label="Mentor">
+        {me && <MobileNavEnd me={me} />}
+        <nav className="row gap-32 nav-links" aria-label="Mentor">
           <NavLink to="/mentor" end className="nav-link">Dashboard</NavLink>
           <NavLink to="/mentor/messages" className="nav-link">Messages</NavLink>
           {me && <NavLink to={`/mentors/${me.user.id}`} className="nav-link">My public profile</NavLink>}
@@ -135,6 +193,7 @@ export function MentorNav() {
           )}
         </nav>
       </div>
+      <TabBar />
     </header>
   );
 }
@@ -209,15 +268,24 @@ export function AdminShell({ kind = 'admin', title, sub, actions, children }) {
   const logOut = useLogOut();
   const openReports = useOpenReportsCount(sup);
   const badgeOf = (it) => (it.badge === 'pending' ? pending : it.badge === 'reports' ? openReports : it.badge);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const waiting = items.reduce((n, it) => n + (typeof it.badge === 'string' ? badgeOf(it) : 0), 0);
   return (
     <div className={`shell ${sup ? 'shell-super' : ''}`}>
-      <aside className="sidebar">
+      <div className="shell-topbar">
+        <button className="icon-btn" aria-label="Open menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}><Icon name="Menu" size={24} />{waiting > 0 && <span className="tab-badge">{waiting}</span>}</button>
+        <Logo light to={sup ? '/super' : '/admin'} />
+        <Link to="/account" aria-label="Your profile"><Avatar name={me?.name || ' '} src={me?.avatar} size={34} /></Link>
+      </div>
+      {menuOpen && <div className="drawer-backdrop" onClick={() => setMenuOpen(false)} />}
+      <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
+        <button className="icon-btn drawer-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}><Icon name="X" size={22} /></button>
         <Logo light to={sup ? '/super' : '/admin'} />
         <span className={`role-badge ${sup ? 'gold' : ''}`}>{sup ? 'SUPER ADMIN' : 'ADMIN'}</span>
         <span className="sidebar-label">{sup ? 'SYSTEM' : 'MANAGE'}</span>
         <nav className="col gap-6">
           {items.map((it) => (
-            <NavLink key={it.to} to={it.to} end={it.end} className="sidebar-item">
+            <NavLink key={it.to} to={it.to} end={it.end} className="sidebar-item" onClick={() => setMenuOpen(false)}>
               <Icon name={it.icon} size={18} />
               <span className="fill">{it.label}</span>
               {badgeOf(it) > 0 && <span className="count">{badgeOf(it)}</span>}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { MentorNav, StudentNav } from '../../components/layout.jsx';
 import { ReportDialog } from '../../components/mentorship.jsx';
 import { Avatar, Button, Icon, SearchBox } from '../../components/ui.jsx';
@@ -70,7 +70,7 @@ export default function Chat({ role }) {
         {messages && convos.length === 0 ? (
           <div className="card empty"><Icon name="MessageCircle" size={28} color="var(--gray)" /><h3 className="h3">No conversations yet</h3><p className="muted">{role === 'mentor' ? 'When a student writes to you, the conversation shows here.' : 'Open a mentor’s profile and tap Message to start a conversation.'}</p>{role === 'student' && <Button variant="outline" to="/mentors">Find a mentor</Button>}</div>
         ) : (
-          <div className="chat card">
+          <div className={`chat card ${withId ? 'show-panel' : ''}`}>
             <div className="chat-list">
               <div style={{ padding: 20 }}><SearchBox value={q} onChange={setQ} placeholder="Search conversations" /></div>
               {visible.map((c) => {
@@ -88,9 +88,10 @@ export default function Chat({ role }) {
             {active && (
               <div className="chat-panel">
                 <div className="chat-head">
+                  <button className="icon-btn chat-back" aria-label="Back to conversations" onClick={() => setParams({})}><Icon name="ChevronLeft" size={24} /></button>
                   <Avatar name={person.name} src={person.photo} size={44} />
-                  <div className="col fill min0"><span className="h3 truncate">{person.name}</span><span className="xs muted">{person.isMentor ? 'Verified mentor' : 'Student'}</span></div>
-                  {person.isMentor && <Button variant="outline" size="sm" to={`/mentors/${person.id}`}>View profile</Button>}
+                  <div className="col fill min0">{person.isMentor ? <Link to={`/mentors/${person.id}`} className="h3 truncate">{person.name}</Link> : <span className="h3 truncate">{person.name}</span>}<span className="xs muted">{person.isMentor ? 'Verified mentor' : 'Student'}</span></div>
+                  {person.isMentor && <Button variant="outline" size="sm" className="chat-profile-btn" to={`/mentors/${person.id}`}>View profile</Button>}
                   <button className="link danger xs" onClick={() => setReporting(true)}>Report</button>
                 </div>
                 <div className="chat-body">
