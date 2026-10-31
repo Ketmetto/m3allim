@@ -4,7 +4,7 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
 
-const routes = ['/', '/mentors', '/mentors/layla', '/book/layla', '/book/layla/confirmed', '/login', '/signup', '/mentor/apply', '/mentor/status', '/welcome', '/account', '/reset-password', '/student', '/student/sessions', '/student/messages', '/admin', '/admin/verification', '/admin/reports', '/admin/users', '/admin/announcements', '/super', '/super/verification', '/super/admins', '/super/settings', '/super/audit', '/screens'];
+const routes = ['/', '/mentors', '/mentors/layla', '/book/layla', '/book/layla/confirmed', '/login', '/signup', '/mentor/apply', '/mentor/status', '/mentor', '/mentor/messages', '/super/reports', '/welcome', '/account', '/reset-password', '/student', '/student/sessions', '/student/messages', '/admin', '/admin/verification', '/admin/reports', '/admin/users', '/admin/announcements', '/super', '/super/verification', '/super/admins', '/super/settings', '/super/audit', '/screens'];
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'error' });
 const { default: App } = await server.ssrLoadModule('/src/App.jsx');
 let failed = 0;

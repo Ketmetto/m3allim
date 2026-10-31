@@ -45,6 +45,7 @@ export default function MentorStatus() {
         ))}
         {app.note && app.status !== 'Pending' && <div className="col gap-6"><span className="xs muted">Note from the M3allim team</span><p className="sm">{app.note}</p></div>}
       </div>
+      {app.status === 'Approved' && <Button size="lg" iconAfter="ArrowRight" to="/mentor">Go to my mentor dashboard</Button>}
       <Button variant="outline" size="lg" icon="LogOut" onClick={logOut}>Log out</Button>
     </AuthLayout>
   );

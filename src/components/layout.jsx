@@ -4,6 +4,8 @@ import { student, superAdmin } from '../data/mock.js';
 import { usePendingCount } from '../data/applications.js';
 import { supabase } from '../lib/supabase.js';
 import { useProfile } from '../lib/profile.js';
+import { destinationFor, isSuperAdminEmail } from '../lib/auth.js';
+import { useOpenReportsCount } from '../data/mentorship.js';
 
 function useLogOut() {
   const navigate = useNavigate();
@@ -16,6 +18,7 @@ function useLogOut() {
 /* ---------- Public navigation (guest) ---------- */
 export function PublicNav() {
   const navigate = useNavigate();
+  const me = useProfile();
   const go = (id) => navigate('/', { state: { scroll: id } });
   return (
     <header className="nav">
@@ -27,8 +30,14 @@ export function PublicNav() {
           <button className="nav-link nav-btn" onClick={() => go('how')}>How it works</button>
           <button className="nav-link nav-btn" onClick={() => go('become')}>Become a mentor</button>
           <span className="nav-divider" />
-          <Link to="/login" className="semibold">Log in</Link>
-          <Button to="/signup" size="sm">Get started</Button>
+          {me ? (
+            <Button size="sm" icon="LayoutDashboard" onClick={async () => navigate(await destinationFor(me.user))}>My dashboard</Button>
+          ) : (
+            <>
+              <Link to="/login" className="semibold">Log in</Link>
+              <Button to="/signup" size="sm">Get started</Button>
+            </>
+          )}
         </nav>
       </div>
     </header>
@@ -100,6 +109,43 @@ export function AuthLayout({ title, sub, children }) {
   );
 }
 
+/* ---------- Mentor navigation (approved mentors) ---------- */
+export function MentorNav() {
+  const me = useProfile();
+  const logOut = useLogOut();
+  return (
+    <header className="nav">
+      <div className="container nav-inner">
+        <Logo to="/mentor" />
+        <nav className="row gap-32" aria-label="Mentor">
+          <NavLink to="/mentor" end className="nav-link">Dashboard</NavLink>
+          <NavLink to="/mentor/messages" className="nav-link">Messages</NavLink>
+          {me && <NavLink to={`/mentors/${me.user.id}`} className="nav-link">My public profile</NavLink>}
+          {me && (
+            <div className="row gap-10">
+              <Link to="/account" className="row gap-10 nav-profile" title="Your profile">
+                <Avatar name={me.name} src={me.avatar} size={40} />
+                <div className="col">
+                  <span className="semibold">{me.name}</span>
+                  <span className="xs muted">Mentor</span>
+                </div>
+              </Link>
+              <button className="icon-btn muted" aria-label="Log out" title="Log out" onClick={logOut}><Icon name="LogOut" size={16} /></button>
+            </div>
+          )}
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+/* Picks the navigation for whoever is looking: guests and the super admin get the public bar. */
+export function RoleNav() {
+  const me = useProfile();
+  if (!me || isSuperAdminEmail(me.email)) return <PublicNav />;
+  return me.role === 'mentor' ? <MentorNav /> : <StudentNav />;
+}
+
 export function Footer() {
   return (
     <footer className="footer">
@@ -149,6 +195,7 @@ const ADMIN_ITEMS = [
 const SUPER_ITEMS = [
   { to: '/super', end: true, icon: 'LayoutDashboard', label: 'Platform overview' },
   { to: '/super/verification', icon: 'BadgeCheck', label: 'Mentor verification', badge: 'pending' },
+  { to: '/super/reports', icon: 'Flag', label: 'Reports', badge: 'reports' },
   { to: '/super/admins', icon: 'ShieldCheck', label: 'Manage admins' },
   { to: '/super/settings', icon: 'SlidersHorizontal', label: 'Platform settings' },
   { to: '/super/audit', icon: 'History', label: 'Audit log & export' },
@@ -160,7 +207,8 @@ export function AdminShell({ kind = 'admin', title, sub, actions, children }) {
   const pending = usePendingCount();
   const me = useProfile({ name: sup ? superAdmin.name : 'Rana Khalil' });
   const logOut = useLogOut();
-  const badgeOf = (it) => (it.badge === 'pending' ? pending : it.badge);
+  const openReports = useOpenReportsCount(sup);
+  const badgeOf = (it) => (it.badge === 'pending' ? pending : it.badge === 'reports' ? openReports : it.badge);
   return (
     <div className={`shell ${sup ? 'shell-super' : ''}`}>
       <aside className="sidebar">

@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 import { Logo } from '../components/ui.jsx';
 
 const GROUPS = [
-  ['Public & booking flow', [['/', 'Landing page'], ['/mentors', 'Browse mentors'], ['/mentors/layla', 'Mentor profile'], ['/book/layla', 'Confirm booking'], ['/book/layla/confirmed', 'Booking confirmed'], ['/login', 'Sign in'], ['/signup', 'Sign up'], ['/mentor/apply', 'Mentor application']]],
+  ['Public & booking flow', [['/', 'Landing page'], ['/mentors', 'Browse mentors'], ['/mentors/layla', 'Mentor profile'], ['/book/layla', 'Confirm booking'], ['/book/layla/confirmed', 'Booking confirmed'], ['/login', 'Sign in'], ['/signup', 'Sign up'], ['/mentor/apply', 'Mentor application'], ['/mentor', 'Mentor dashboard'], ['/mentor/messages', 'Mentor messages']]],
   ['Student', [['/student', 'Dashboard'], ['/student/sessions', 'My sessions'], ['/student/messages', 'Messages']]],
   ['Admin', [['/admin', 'Overview'], ['/admin/verification', 'Mentor verification'], ['/admin/reports', 'Reports'], ['/admin/users', 'Users'], ['/admin/announcements', 'Announcements']]],
-  ['Super admin', [['/super', 'Platform overview'], ['/super/verification', 'Mentor verification'], ['/super/admins', 'Manage admins'], ['/super/settings', 'Platform settings'], ['/super/audit', 'Audit log & export']]],
+  ['Super admin', [['/super', 'Platform overview'], ['/super/verification', 'Mentor verification'], ['/super/reports', 'Reports'], ['/super/admins', 'Manage admins'], ['/super/settings', 'Platform settings'], ['/super/audit', 'Audit log & export']]],
 ];
 
 export default function ScreenIndex() {

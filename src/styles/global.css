@@ -357,6 +357,15 @@ input, select, textarea { font: inherit; color: inherit; }
 .nav-profile:hover .semibold { color: var(--teal); }
 .sidebar-profile a:hover .semibold { text-decoration: underline; }
 
+/* ============ Mentorship (sessions, dialogs) ============ */
+.modal-backdrop { position: fixed; inset: 0; z-index: 50; background: rgba(20, 20, 43, 0.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal { width: 100%; padding: 28px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.proposal { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: 10px; background: #fffaf0; border: 1px solid #f1e2b0; }
+.session-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.empty { padding: 48px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.link.danger { color: var(--red); }
+.save-btn { display: inline-flex; align-items: center; gap: 6px; }
+
 /* ============ Responsive ============ */
 @media (max-width: 1100px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
@@ -378,6 +387,7 @@ input, select, textarea { font: inherit; color: inherit; }
   .banner { flex-direction: column; align-items: flex-start; }
   .hero-title { font-size: 36px; }
   .session-row { flex-wrap: wrap; }
+  .session-actions { justify-content: flex-start; width: 100%; }
   .stepper { flex-wrap: wrap; }
   .auth { grid-template-columns: minmax(0, 1fr); }
   .table { overflow-x: auto; }
@@ -385,3 +395,5 @@ input, select, textarea { font: inherit; color: inherit; }
   .auth-aside { display: none; }
   .auth-logo { display: block; }
 }
+.rate-pick button.on { color: var(--gold); }
+.rate-pick.big button { font-size: 32px; }
