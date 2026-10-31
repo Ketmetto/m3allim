@@ -16,7 +16,7 @@ export function useProfile(demo = null) {
     if (!session) return;
     const { user } = session;
     const load = async () => {
-      const { data } = await supabase.from('profiles').select('full_name, avatar_url, role, university, field').eq('id', user.id).maybeSingle();
+      const { data } = await supabase.from('profiles').select('full_name, avatar_url, role, university, field, bio').eq('id', user.id).maybeSingle();
       const meta = user.user_metadata || {};
       setProfile({
         name: data?.full_name || meta.full_name || meta.name || user.email.split('@')[0],
@@ -24,6 +24,7 @@ export function useProfile(demo = null) {
         role: data?.role,
         university: data?.university,
         field: data?.field,
+        bio: data?.bio,
         email: user.email,
         user,
       });

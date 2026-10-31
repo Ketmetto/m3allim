@@ -61,6 +61,8 @@ export async function destinationFor(user) {
   }
   if (!role) return '/welcome';
   if (role === 'student') return '/student';
+  const { data: mentor } = await supabase.from('mentors').select('id').eq('id', user.id).maybeSingle();
+  if (mentor) return '/mentor';
   const { data: application } = await supabase.from('mentor_applications').select('id').eq('user_id', user.id).maybeSingle();
   return application ? '/mentor/status' : '/mentor/apply';
 }
