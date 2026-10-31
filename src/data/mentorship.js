@@ -189,3 +189,21 @@ export function useOpenReportsCount(enabled) {
   }, [enabled]);
   return count;
 }
+
+/* Unread messages for the signed-in person, live (taskbar badge). */
+export function useUnreadCount() {
+  const session = useSession();
+  const userId = session?.user.id;
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!userId || !supabase) return;
+    const refresh = () => supabase.from('messages').select('id', { count: 'exact', head: true }).eq('recipient_id', userId).is('read_at', null).then(({ count: c }) => setCount(c || 0));
+    refresh();
+    const channel = supabase
+      .channel(`unread-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `recipient_id=eq.${userId}` }, refresh)
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [userId]);
+  return count;
+}

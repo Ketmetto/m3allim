@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { AuthLayout } from '../../components/layout.jsx';
+import { AuthLayout, TabBar } from '../../components/layout.jsx';
 import { Button, Chip, Field, Input, PhotoPicker, Select, Textarea } from '../../components/ui.jsx';
 import { getMyMentorProfile, updateMyMentorProfile } from '../../data/mentorship.js';
 import { supabase } from '../../lib/supabase.js';
@@ -118,6 +118,7 @@ export default function Account() {
           <Button variant="outline" onClick={async () => navigate(await destinationFor(me.user))}>Done</Button>
         </div>
       </form>
+      <TabBar />
     </AuthLayout>
   );
 }
