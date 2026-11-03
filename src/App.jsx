@@ -91,7 +91,7 @@ export default function App() {
         {/* Super admin */}
         <Route path="/super" element={<RequireAuth superAdmin><PlatformOverview /></RequireAuth>} />
         <Route path="/super/verification" element={<RequireAuth superAdmin><Verification kind="super" /></RequireAuth>} />
-        <Route path="/super/reports" element={<RequireAuth superAdmin><ReportsLive /></RequireAuth>} />
+        <Route path="/super/reports" element={<RequireAuth superAdmin>{live(<ReportsLive />, <Reports />)}</RequireAuth>} />
         <Route path="/super/admins" element={<RequireAuth superAdmin><ManageAdmins /></RequireAuth>} />
         <Route path="/super/settings" element={<RequireAuth superAdmin><PlatformSettings /></RequireAuth>} />
         <Route path="/super/audit" element={<RequireAuth superAdmin><AuditLog /></RequireAuth>} />

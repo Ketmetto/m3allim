@@ -12,7 +12,9 @@ export default function Messages() {
 
   const active = convos.find((c) => c.id === activeId);
   const mentor = mentorById(active.mentor);
-  useEffect(() => endRef.current?.scrollIntoView({ block: 'end' }), [active.messages.length, activeId]);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: 'end' });
+  }, [active.messages.length, activeId]);
 
   const open = (id) => { setActiveId(id); setConvos((all) => all.map((c) => (c.id === id ? { ...c, unread: false } : c))); };
   const send = (e) => {

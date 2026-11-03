@@ -376,6 +376,11 @@ input, select, textarea { font: inherit; color: inherit; }
 .tab-badge { position: absolute; top: -4px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--red); color: var(--white); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
 .shell-topbar .icon-btn { position: relative; }
 
+/* Grid columns may shrink below their content's natural width, so long text and rows wrap instead of widening the page. */
+.hero-grid > *, .profile-layout > *, .booking-layout > *, .dash-layout > *, .split-2-1 > *, .split-main-panel > *, .browse-layout > *, .grid-2 > *, .grid-3 > *, .grid-4 > *, .shell > * { min-width: 0; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+a, button, input, select, textarea, label { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
 /* ============ Responsive ============ */
 @media (max-width: 1100px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
@@ -390,7 +395,21 @@ input, select, textarea { font: inherit; color: inherit; }
   .nav-inner { height: 64px; }
   .nav-links { display: none; }
   .nav-mobile { display: inline-flex; }
-  .tabbar { display: grid; }
+  .tabbar { display: grid; grid-auto-columns: minmax(0, 1fr); }
+  .tab-icon { padding: 3px 10px; }
+  .tab-item { min-height: 52px; justify-content: center; }
+  /* iPhones zoom into any text box under 16px; keep them at 16px so the page stays put */
+  input, select, textarea, .input, .select, .hero-search input, .searchbox input { font-size: 16px !important; }
+  .btn-sm { height: 40px; }
+  .icon-btn { min-width: 40px; min-height: 40px; }
+  html, body { overflow-x: clip; }
+  .hero { padding: 40px 0 36px; }
+  .hero-search { flex-wrap: wrap; padding: 10px; }
+  .hero-search > span { flex: 1 1 100%; height: 44px; padding: 0 6px; }
+  .hero-search .select-wrap { flex: 1 1 auto; width: auto; }
+  .hero-search .btn { flex: 1 1 auto; }
+  .bars { overflow-x: auto; gap: 8px; }
+  .row.between { flex-wrap: wrap; gap: 8px 12px; }
   /* Keep page content clear of the fixed taskbar */
   body:has(.tabbar) { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
   .container { padding: 0 16px; }
@@ -429,6 +448,8 @@ input, select, textarea { font: inherit; color: inherit; }
   .session-row { flex-wrap: wrap; gap: 12px 14px; padding: 16px; }
   .session-row > .avatar { display: none; }
   .session-row > .fill { flex: 1 1 220px; }
+  .dash-session { flex-wrap: wrap; }
+  .dash-session > .fill { flex: 1 1 180px; min-width: 0; }
   .session-row .date-block { width: 52px; height: 60px; }
   .session-actions { justify-content: flex-start; width: 100%; }
   .stepper { flex-wrap: wrap; }

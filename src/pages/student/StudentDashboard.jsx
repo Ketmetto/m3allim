@@ -44,7 +44,7 @@ export default function StudentDashboard() {
                 return (
                   <div key={s.id} className="col gap-20">
                     {i > 0 && <hr className="hr" />}
-                    <div className="row gap-16">
+                    <div className="row gap-16 dash-session">
                       <Avatar name={m.name} src={m.photo} size={56} />
                       <div className="col gap-4 fill"><span className="h3">{m.name}</span><span className="sm muted">{m.headline} · {s.topic.split(' · ')[0]}</span><span className="row gap-6 sm medium"><Icon name="Calendar" size={14} color="var(--teal)" /> {s.month === 'OCT' ? `October ${s.day}` : ''} · {s.time.replace(' · Video call', '')}</span></div>
                       <StatusChip status={s.status} />
