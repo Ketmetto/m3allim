@@ -81,6 +81,7 @@ input, select, textarea { font: inherit; color: inherit; }
 
 .nav { background: var(--white); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
 .nav-inner { height: 88px; display: flex; align-items: center; justify-content: space-between; }
+.nav-links { white-space: nowrap; }
 .nav-link { position: relative; font-weight: 500; color: var(--gray); padding: 8px 0; background: none; border: 0; }
 .nav-link:hover { color: var(--ink); }
 .nav-link.active { color: var(--teal); font-weight: 600; }
@@ -387,17 +388,29 @@ a, button, input, select, textarea, label { -webkit-tap-highlight-color: transpa
   .hero-grid, .profile-layout, .booking-layout, .dash-layout, .split-2-1, .split-main-panel, .browse-layout { grid-template-columns: 1fr; }
   .sticky, .filters { position: static; }
   .hero-stack { display: none; }
-}
-@media (max-width: 860px) {
-  .grid-3, .grid-2 { grid-template-columns: 1fr; }
-  .footer-grid { grid-template-columns: 1fr 1fr; }
-  /* Top bar + taskbar */
+  /* Tablets and phones: the full menu doesn't fit, so links move to the bottom taskbar */
   .nav-inner { height: 64px; }
   .nav-links { display: none; }
   .nav-mobile { display: inline-flex; }
   .tabbar { display: grid; grid-auto-columns: minmax(0, 1fr); }
   .tab-icon { padding: 3px 10px; }
   .tab-item { min-height: 52px; justify-content: center; }
+  /* Keep page content clear of the fixed taskbar */
+  body:has(.tabbar) { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 860px) {
+  .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  /* Compact header: smaller logo, room for the iPhone notch when saved to the home screen */
+  .nav { padding-top: env(safe-area-inset-top); }
+  .nav-inner { height: 56px; gap: 12px; }
+  .logo { gap: 8px; min-width: 0; }
+  .logo-mark { width: 32px; height: 32px; border-radius: 9px; }
+  .logo-mark svg { width: 19px; height: 19px; }
+  .logo-word { font-size: 20px; }
+  .logo-ar { font-size: 18px; }
+  .logo-divider { height: 18px; }
+  .shell-topbar { padding-top: calc(10px + env(safe-area-inset-top)); }
   /* iPhones zoom into any text box under 16px; keep them at 16px so the page stays put */
   input, select, textarea, .input, .select, .hero-search input, .searchbox input { font-size: 16px !important; }
   .btn-sm { height: 40px; }
@@ -410,8 +423,6 @@ a, button, input, select, textarea, label { -webkit-tap-highlight-color: transpa
   .hero-search .btn { flex: 1 1 auto; }
   .bars { overflow-x: auto; gap: 8px; }
   .row.between { flex-wrap: wrap; gap: 8px 12px; }
-  /* Keep page content clear of the fixed taskbar */
-  body:has(.tabbar) { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
   .container { padding: 0 16px; }
   .page { padding-top: 24px; padding-bottom: 32px; }
   .h1 { font-size: 26px; }
@@ -435,7 +446,7 @@ a, button, input, select, textarea, label { -webkit-tap-highlight-color: transpa
   .drawer-backdrop { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(20, 20, 43, 0.45); }
   .shell-main { padding: 20px 16px 40px; gap: 20px; }
   /* Chat: list or conversation, like a messaging app */
-  .chat { grid-template-columns: 1fr; height: calc(100vh - 64px - 72px - 140px); min-height: 420px; }
+  .chat { grid-template-columns: 1fr; height: calc(100dvh - 56px - 76px - 140px); min-height: 420px; }
   .chat.show-panel .chat-list, .chat:not(.show-panel) .chat-panel { display: none; }
   .chat-list { border-right: 0; }
   .chat-back { display: inline-flex; }
@@ -469,4 +480,8 @@ a, button, input, select, textarea, label { -webkit-tap-highlight-color: transpa
   .auth-main { padding: 28px 16px; }
   .role-option { padding: 12px 10px; gap: 8px; }
   .hero-title { font-size: 30px; }
+}
+@media (max-width: 380px) {
+  .shell-topbar .logo-divider, .shell-topbar .logo-ar { display: none; }
+  .logo-word { font-size: 19px; }
 }
