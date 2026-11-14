@@ -8,7 +8,7 @@ import { supabase } from '../../lib/supabase.js';
 import { useProfile } from '../../lib/profile.js';
 import { beirutToISO, fmtWhen } from '../../lib/time.js';
 
-/* A real mentor's public profile, where students request a session. */
+/* A real mentor's public profile, where students request a session. Guests can only view it. */
 export default function MentorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -40,6 +40,7 @@ export default function MentorPage() {
   }
 
   const own = me?.user.id === m.id;
+  const guest = me === null;
   const first = m.name.split(' ')[0];
   const saved = favorites.ids.has(m.id);
   const needLogin = () => navigate('/login', { state: { error: 'Log in or create a free account to continue.' } });
@@ -75,7 +76,7 @@ export default function MentorPage() {
             </div>
             <div className="row gap-8 wrap"><Chip kind="teal" dot={false}>{m.field}</Chip>{m.languages.map((l) => <Chip key={l} kind="gray" dot={false}>{l}</Chip>)}</div>
           </div>
-          {!own && (
+          {!own && !guest && (
             <div className="col gap-8">
               <Button variant="outline" size="sm" icon="Bookmark" onClick={() => (favorites.signedIn ? favorites.toggle(m.id) : needLogin())}>{saved ? 'Saved' : 'Save'}</Button>
               <Button variant="outline" size="sm" icon="MessageCircle" onClick={() => (me ? navigate(`/${me.role === 'mentor' ? 'mentor' : 'student'}/messages?with=${m.id}`) : needLogin())}>Message</Button>
@@ -108,6 +109,12 @@ export default function MentorPage() {
                   <p className="sm muted">Students see this page when they find you. Keep your bio and availability up to date.</p>
                   <Button to="/account" icon="SlidersHorizontal">Edit my profile</Button>
                 </>
+              ) : guest ? (
+                <>
+                  <div className="col gap-6"><h2 className="h2-sm">Want a session with {first}?</h2><p className="sm muted">Create a free student account to request a 45-minute video call, message {first} and save mentors.</p></div>
+                  <Button to="/signup" iconAfter="ArrowRight">Create a free account</Button>
+                  <Button to="/login" variant="outline">I already have an account</Button>
+                </>
               ) : sent ? (
                 <>
                   <div className="col gap-6"><Icon name="CircleCheck" size={28} color="var(--green)" /><h2 className="h2-sm">Request sent</h2><p className="sm muted">{first} will accept or suggest another time. You asked for {fmtWhen(sent.starts_at)} (Beirut).</p></div>
@@ -125,7 +132,7 @@ export default function MentorPage() {
                 </form>
               )}
             </Card>
-            <div className="reassure"><Icon name="ShieldCheck" size={22} color="var(--teal)" /><div className="col gap-4"><span className="semibold text-deep">Mentorship you can trust</span><span className="xs muted">Every mentor is verified. Sessions are always free, and you can reschedule or cancel from <Link to="/student/sessions" className="text-teal">My sessions</Link>.</span></div></div>
+            <div className="reassure"><Icon name="ShieldCheck" size={22} color="var(--teal)" /><div className="col gap-4"><span className="semibold text-deep">Mentorship you can trust</span><span className="xs muted">Every mentor is verified. Sessions are always free{guest ? '.' : <>, and you can reschedule or cancel from <Link to="/student/sessions" className="text-teal">My sessions</Link>.</>}</span></div></div>
           </aside>
         </div>
       </div>

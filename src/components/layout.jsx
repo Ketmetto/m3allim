@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Avatar, Button, Icon, Logo } from './ui.jsx';
 import { student, superAdmin } from '../data/mock.js';
 import { usePendingCount } from '../data/applications.js';
@@ -62,6 +62,93 @@ export function TabBar() {
   );
 }
 
+/* ---------- Slide-out menu (smaller screens): the header links behind a ☰ button ---------- */
+function menuFor(me) {
+  if (!me) return [
+    { to: '/', end: true, icon: 'Home', label: 'Home' },
+    { to: '/mentors', icon: 'Search', label: 'Find a mentor' },
+    { to: '/', scroll: 'how', icon: 'Lightbulb', label: 'How it works' },
+    { to: '/', scroll: 'become', icon: 'Briefcase', label: 'Become a mentor' },
+  ];
+  if (isSuperAdminEmail(me.email)) return [
+    { to: '/super', end: true, icon: 'LayoutDashboard', label: 'Admin dashboard' },
+    { to: '/super/verification', icon: 'BadgeCheck', label: 'Verify mentors' },
+    { to: '/super/reports', icon: 'Flag', label: 'Reports' },
+    { to: '/mentors', icon: 'Search', label: 'Find a mentor' },
+    { to: '/account', icon: 'User', label: 'My profile' },
+  ];
+  if (me.role === 'mentor') return [
+    { to: '/mentor', end: true, icon: 'Home', label: 'Dashboard' },
+    { to: '/mentor/messages', icon: 'MessageCircle', label: 'Messages', unread: true },
+    { to: `/mentors/${me.user.id}`, icon: 'BadgeCheck', label: 'My public profile' },
+    { to: '/account', icon: 'User', label: 'My profile' },
+  ];
+  return [
+    { to: '/student', end: true, icon: 'Home', label: 'Dashboard' },
+    { to: '/mentors', icon: 'Search', label: 'Find a mentor' },
+    { to: '/student/sessions', icon: 'Calendar', label: 'My sessions' },
+    { to: '/student/messages', icon: 'MessageCircle', label: 'Messages', unread: true },
+    { to: '/account', icon: 'User', label: 'My profile' },
+  ];
+}
+
+function NavMenu({ me, logoTo }) {
+  const [open, setOpen] = useState(false);
+  const { pathname } = useLocation();
+  const unread = useUnreadCount();
+  const logOut = useLogOut();
+  const close = () => setOpen(false);
+  useEffect(close, [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => e.key === 'Escape' && close();
+    document.addEventListener('keydown', onKey);
+    document.body.classList.add('menu-open');
+    return () => { document.removeEventListener('keydown', onKey); document.body.classList.remove('menu-open'); };
+  }, [open]);
+  return (
+    <>
+      <button className="icon-btn nav-burger" aria-label="Open menu" aria-expanded={open} onClick={() => setOpen(true)}>
+        <Icon name="Menu" size={24} />
+        {unread > 0 && <span className="tab-badge">{unread > 9 ? '9+' : unread}</span>}
+      </button>
+      <div className={`menu-backdrop ${open ? 'open' : ''}`} onClick={close} />
+      <aside className={`menu-drawer ${open ? 'open' : ''}`} aria-label="Menu" aria-hidden={!open} inert={open ? undefined : ''}>
+        <div className="row between">
+          <Logo to={logoTo} />
+          <button className="icon-btn" aria-label="Close menu" onClick={close}><Icon name="X" size={22} /></button>
+        </div>
+        {me && (
+          <Link to="/account" className="menu-profile" onClick={close}>
+            <Avatar name={me.name} src={me.avatar} size={44} />
+            <span className="col min0"><span className="semibold truncate">{me.name}</span><span className="xs muted truncate">{me.email}</span></span>
+          </Link>
+        )}
+        <nav className="col gap-4">
+          {menuFor(me).map((t) => t.scroll ? (
+            <Link key={t.scroll} to={t.to} state={{ scroll: t.scroll }} className="menu-item" onClick={close}><Icon name={t.icon} size={20} />{t.label}</Link>
+          ) : (
+            <NavLink key={t.to} to={t.to} end={t.end} className="menu-item" onClick={close}>
+              <Icon name={t.icon} size={20} />{t.label}
+              {t.unread && unread > 0 && <span className="count">{unread}</span>}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="menu-foot col gap-10">
+          {me ? (
+            <button className="menu-item" onClick={logOut}><Icon name="LogOut" size={20} />Log out</button>
+          ) : (
+            <>
+              <Button to="/signup" onClick={close}>Get started</Button>
+              <Button to="/login" variant="outline" onClick={close}>Log in</Button>
+            </>
+          )}
+        </div>
+      </aside>
+    </>
+  );
+}
+
 /* Right side of the top bar on phones, where the links are replaced by the taskbar. */
 function MobileNavEnd({ me }) {
   if (me) return <Link to="/account" className="nav-mobile" aria-label="Your profile"><Avatar name={me.name} src={me.avatar} size={36} /></Link>;
@@ -76,7 +163,7 @@ export function PublicNav() {
   return (
     <header className="nav">
       <div className="container nav-inner">
-        <Logo />
+        <div className="nav-start"><NavMenu me={me} /><Logo /></div>
         <MobileNavEnd me={me} />
         <nav className="row gap-32 nav-links" aria-label="Main">
           <NavLink to="/" end className="nav-link">Home</NavLink>
@@ -106,17 +193,13 @@ export function StudentNav() {
   return (
     <header className="nav">
       <div className="container nav-inner">
-        <Logo to="/student" />
+        <div className="nav-start">{me && <NavMenu me={me} logoTo="/student" />}<Logo to="/student" /></div>
         {me && <MobileNavEnd me={me} />}
         <nav className="row gap-32 nav-links" aria-label="Student">
           <NavLink to="/student" end className="nav-link">Dashboard</NavLink>
           <NavLink to="/mentors" className="nav-link">Find a mentor</NavLink>
           <NavLink to="/student/sessions" className="nav-link">My sessions</NavLink>
           <NavLink to="/student/messages" className="nav-link">Messages</NavLink>
-          <button className="icon-circle" aria-label="Notifications">
-            <Icon name="Bell" size={18} />
-            <span className="notif-dot" />
-          </button>
           {me && (
             <div className="row gap-10">
               <Link to="/account" className="row gap-10 nav-profile" title="Your profile">
@@ -147,8 +230,8 @@ export function AuthLayout({ title, sub, children }) {
           <span className="auth-quote-by">Lara, LAU graduate · now a UX designer in Beirut</span>
         </div>
         <div className="row gap-32 auth-stats">
-          <div className="col"><span className="auth-stat">186</span><span className="xs">Verified mentors</span></div>
-          <div className="col"><span className="auth-stat">2,418</span><span className="xs">Students</span></div>
+          <div className="col"><span className="auth-stat">Verified</span><span className="xs">Every mentor</span></div>
+          <div className="col"><span className="auth-stat">1-to-1</span><span className="xs">Video sessions</span></div>
           <div className="col"><span className="auth-stat">Free</span><span className="xs">Always</span></div>
         </div>
       </aside>
@@ -173,7 +256,7 @@ export function MentorNav() {
   return (
     <header className="nav">
       <div className="container nav-inner">
-        <Logo to="/mentor" />
+        <div className="nav-start">{me && <NavMenu me={me} logoTo="/mentor" />}<Logo to="/mentor" /></div>
         {me && <MobileNavEnd me={me} />}
         <nav className="row gap-32 nav-links" aria-label="Mentor">
           <NavLink to="/mentor" end className="nav-link">Dashboard</NavLink>
@@ -312,7 +395,6 @@ export function AdminShell({ kind = 'admin', title, sub, actions, children }) {
           </div>
           <div className="row gap-12">
             {actions}
-            <button className="icon-circle" aria-label="Notifications"><Icon name="Bell" size={18} /></button>
           </div>
         </div>
         {children}

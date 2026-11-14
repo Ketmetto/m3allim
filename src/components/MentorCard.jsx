@@ -2,17 +2,18 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar, Button, Chip, Icon, Stars } from './ui.jsx';
 
-/* saved / onToggleSave come from the real favorites; without them the bookmark is local (demo data). */
-export default function MentorCard({ mentor, saved: savedProp, onToggleSave }) {
+/* saved / onToggleSave come from the real favorites; without them the bookmark is local (demo data).
+   canSave={false} hides the bookmark, e.g. for guests who can only browse. */
+export default function MentorCard({ mentor, saved: savedProp, onToggleSave, canSave = true }) {
   const [savedLocal, setSaved] = useState(false);
   const saved = onToggleSave ? savedProp : savedLocal;
   return (
     <article className="card mentor-card">
       <div className="row between">
         <Avatar name={mentor.name} src={mentor.photo} size={72} />
-        <button className="icon-circle sm-circle" aria-pressed={saved} aria-label={saved ? 'Remove from saved' : 'Save mentor'} onClick={() => (onToggleSave ? onToggleSave(mentor.id) : setSaved(!saved))}>
+        {canSave && <button className="icon-circle sm-circle" aria-pressed={saved} aria-label={saved ? 'Remove from saved' : 'Save mentor'} onClick={() => (onToggleSave ? onToggleSave(mentor.id) : setSaved(!saved))}>
           <Icon name="Bookmark" size={16} color={saved ? 'var(--teal)' : undefined} fill={saved ? 'var(--teal)' : 'none'} />
-        </button>
+        </button>}
       </div>
       <div className="col gap-4">
         <div className="row gap-8">

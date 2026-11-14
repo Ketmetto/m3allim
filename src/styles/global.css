@@ -377,6 +377,25 @@ input, select, textarea { font: inherit; color: inherit; }
 .tab-badge { position: absolute; top: -4px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--red); color: var(--white); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
 .shell-topbar .icon-btn { position: relative; }
 
+/* Slide-out menu: ☰ in the header on smaller screens, panel slides in from the left */
+.nav-start { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.nav-burger { display: none; position: relative; margin-left: -8px; color: var(--ink); }
+.nav-burger .tab-badge { top: 2px; right: 0; }
+.menu-backdrop { position: fixed; inset: 0; z-index: 70; background: rgba(20, 20, 43, 0.45); opacity: 0; visibility: hidden; transition: opacity 0.2s ease, visibility 0.2s; }
+.menu-backdrop.open { opacity: 1; visibility: visible; }
+.menu-drawer { position: fixed; top: 0; left: 0; bottom: 0; z-index: 80; width: 300px; max-width: 85vw; display: flex; flex-direction: column; gap: 20px; padding: calc(16px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom)); background: var(--white); overflow-y: auto; transform: translateX(-100%); visibility: hidden; transition: transform 0.25s ease, visibility 0.25s; }
+.menu-drawer.open { transform: none; visibility: visible; box-shadow: 8px 0 32px rgba(0, 0, 0, 0.18); }
+.menu-profile { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: var(--bg); }
+.menu-item { display: flex; align-items: center; gap: 14px; min-height: 48px; padding: 0 14px; border-radius: 10px; border: 0; background: none; color: var(--ink); font-weight: 500; font-size: 15px; text-align: left; width: 100%; }
+.menu-item svg { color: var(--gray); }
+.menu-item:hover { background: var(--bg); }
+.menu-item.active { background: var(--tint); color: var(--teal); font-weight: 600; }
+.menu-item.active svg { color: var(--teal); }
+.menu-item .count { margin-left: auto; }
+.menu-foot { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--line); }
+.menu-foot .btn { width: 100%; }
+body.menu-open { overflow: hidden; }
+
 /* Grid columns may shrink below their content's natural width, so long text and rows wrap instead of widening the page. */
 .hero-grid > *, .profile-layout > *, .booking-layout > *, .dash-layout > *, .split-2-1 > *, .split-main-panel > *, .browse-layout > *, .grid-2 > *, .grid-3 > *, .grid-4 > *, .shell > * { min-width: 0; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -388,10 +407,14 @@ a, button, input, select, textarea, label { -webkit-tap-highlight-color: transpa
   .hero-grid, .profile-layout, .booking-layout, .dash-layout, .split-2-1, .split-main-panel, .browse-layout { grid-template-columns: 1fr; }
   .sticky, .filters { position: static; }
   .hero-stack { display: none; }
-  /* Tablets and phones: the full menu doesn't fit, so links move to the bottom taskbar */
+  /* Tablets and phones: the full menu doesn't fit, so links move into the ☰ menu */
   .nav-inner { height: 64px; }
   .nav-links { display: none; }
   .nav-mobile { display: inline-flex; }
+  .nav-burger { display: inline-flex; }
+}
+/* Phones and tablets (touch) also keep the bottom taskbar, within thumb reach */
+@media (max-width: 1100px) and (pointer: coarse) {
   .tabbar { display: grid; grid-auto-columns: minmax(0, 1fr); }
   .tab-icon { padding: 3px 10px; }
   .tab-item { min-height: 52px; justify-content: center; }

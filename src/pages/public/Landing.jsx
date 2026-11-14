@@ -3,7 +3,32 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { PublicNav, Footer } from '../../components/layout.jsx';
 import MentorCard from '../../components/MentorCard.jsx';
 import { Avatar, Button, Icon, Select, Stars } from '../../components/ui.jsx';
-import { fields, mentors, reviews } from '../../data/mock.js';
+import { fields, mentors as sampleMentors, reviews } from '../../data/mock.js';
+import { hasBackend } from '../../lib/supabase.js';
+import { listMentors } from '../../data/mentorship.js';
+
+const fmt = (n) => n.toLocaleString('en-US');
+
+/* Mentors for the home page: the real directory when Supabase is connected, the sample ones otherwise. */
+function useHomeMentors() {
+  const [list, setList] = useState(hasBackend ? null : sampleMentors);
+  useEffect(() => {
+    if (hasBackend) listMentors().then(setList).catch(() => setList([]));
+  }, []);
+  return list;
+}
+
+function statsFor(list) {
+  if (!hasBackend) return [['186', 'Verified mentors'], ['2,418', 'Students and graduates'], ['742', 'Sessions this month'], ['6', 'Fields to explore']];
+  const sum = (key) => (list || []).reduce((n, m) => n + m[key], 0);
+  const show = (n) => (list ? fmt(n) : '–');
+  return [
+    [show(list?.length), 'Verified mentors'],
+    [show(sum('sessions')), 'Sessions held'],
+    [show(sum('reviews')), 'Reviews from students'],
+    [show(new Set((list || []).map((m) => m.field).filter(Boolean)).size), 'Fields to explore'],
+  ];
+}
 
 const STEPS = [
   { icon: 'Search', title: 'Find your mentor', text: 'Browse verified professionals by field, language and rating.' },
@@ -16,6 +41,9 @@ export default function Landing() {
   const { state } = useLocation();
   const [q, setQ] = useState('');
   const [field, setField] = useState('All fields');
+  const all = useHomeMentors();
+  // Best rated first; new mentors without reviews still show when there are few.
+  const featured = [...(all || [])].sort((a, b) => b.rating - a.rating || b.reviews - a.reviews).slice(0, 3);
 
   useEffect(() => {
     if (state?.scroll) document.getElementById(state.scroll)?.scrollIntoView({ behavior: 'smooth' });
@@ -49,14 +77,14 @@ export default function Landing() {
             </div>
           </div>
           <div className="col gap-16 hero-stack">
-            {mentors.slice(0, 3).map((m) => (
+            {featured.map((m) => (
               <div key={m.id} className="card row gap-16 hero-mini">
                 <Avatar name={m.name} src={m.photo} size={56} />
                 <div className="col fill">
                   <span className="semibold">{m.name}</span>
                   <span className="sm muted">{m.headline}</span>
                 </div>
-                <span className="row gap-6 sm"><Stars value={m.rating} /> {m.rating.toFixed(1)}</span>
+                {m.reviews > 0 && <span className="row gap-6 sm"><Stars value={m.rating} /> {m.rating.toFixed(1)}</span>}
               </div>
             ))}
           </div>
@@ -67,7 +95,7 @@ export default function Landing() {
         <div className="container">
           <h2 className="h2 center">Our community in numbers</h2>
           <div className="grid-4 metrics">
-            {[['186', 'Verified mentors'], ['2,418', 'Students and graduates'], ['742', 'Sessions this month'], ['6', 'Fields to explore']].map(([n, l]) => (
+            {statsFor(all).map(([n, l]) => (
               <div key={l} className="col center gap-4"><span className="metric">{n}</span><span className="muted">{l}</span></div>
             ))}
           </div>
@@ -80,7 +108,11 @@ export default function Landing() {
             <div className="col gap-6"><h2 className="h2">Featured mentors</h2><p className="muted">Highly rated professionals ready to help this week.</p></div>
             <Button to="/mentors" variant="outline">See all mentors</Button>
           </div>
-          <div className="grid-3">{mentors.slice(0, 3).map((m) => <MentorCard key={m.id} mentor={m} />)}</div>
+          {all && featured.length === 0 ? (
+            <p className="muted">Our first mentors are being verified. Check back soon.</p>
+          ) : (
+            <div className="grid-3">{featured.map((m) => <MentorCard key={m.id} mentor={m} canSave={!hasBackend} />)}</div>
+          )}
         </div>
       </section>
 

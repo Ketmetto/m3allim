@@ -42,7 +42,7 @@ export default function BrowseLive() {
         {!mentors ? <p className="muted">Loading mentors…</p> : results.length ? (
           <>
             <p className="muted" aria-live="polite">{results.length} {results.length === 1 ? 'mentor' : 'mentors'}</p>
-            <div className="grid-3 grid-3-tight">{results.map((m) => <MentorCard key={m.id} mentor={m} saved={favorites.ids.has(m.id)} onToggleSave={toggleSave} />)}</div>
+            <div className="grid-3 grid-3-tight">{results.map((m) => <MentorCard key={m.id} mentor={m} saved={favorites.ids.has(m.id)} onToggleSave={toggleSave} canSave={favorites.signedIn} />)}</div>
           </>
         ) : (
           <Card className="empty">
