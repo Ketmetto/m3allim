@@ -103,6 +103,16 @@ Only emails listed in the `super_admins` table can read applications or document
 
 After the first deploy, add the site address (for example `https://m3allim.onrender.com/**`) to Supabase → Authentication → URL Configuration → Redirect URLs, or sign-in links will not return to the live site.
 
+## Deploy on GitHub Pages (free)
+
+`.github/workflows/deploy-pages.yml` builds the site and publishes it on every push to `main`, at `https://<user>.github.io/<repo>/`.
+
+One-time setup on GitHub:
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
+2. **Settings → Secrets and variables → Actions → New repository secret**: add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (same values as `.env.local`). Without them the site runs on sample data.
+3. In Supabase → **Authentication → URL Configuration → Redirect URLs**, add `https://<user>.github.io/<repo>/**` so sign-in and password reset links work there.
+4. **Actions → Deploy to GitHub Pages → Run workflow** (or push any commit).
+
 ## Design tokens
 
 Teal `#0d7377`, deep teal `#084f52`, tint `#eaf5f3`, gold `#d4a017`, ink `#1a1a2e`, gray `#6b7280`, border `#e4e8ed`, background `#f5f7fa`. Font: Inter (Noto Sans Arabic for the wordmark). Edit them in `:root` in `src/styles/global.css`.

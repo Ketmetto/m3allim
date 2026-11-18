@@ -38,6 +38,7 @@ import AuditLog from './pages/superadmin/AuditLog.jsx';
 import ReportsLive from './pages/superadmin/ReportsLive.jsx';
 
 import ScreenIndex from './pages/ScreenIndex.jsx';
+import NotFound from './pages/public/NotFound.jsx';
 import { AuthRedirect, RequireAuth } from './components/auth.jsx';
 import { hasBackend } from './lib/supabase.js';
 
@@ -98,7 +99,7 @@ export default function App() {
 
         {/* Dev helper: list of every screen */}
         <Route path="/screens" element={<ScreenIndex />} />
-        <Route path="*" element={<ScreenIndex />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   );
