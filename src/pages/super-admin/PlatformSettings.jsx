@@ -27,7 +27,9 @@ export default function PlatformSettings() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  useEffect(() => setS(pick(settings)), [settings]);
+  useEffect(() => {
+    setS(pick(settings));
+  }, [settings]);
 
   const dirty = JSON.stringify(s) !== JSON.stringify(pick(settings));
   const set = (k) => (v) => { setS({ ...s, [k]: v }); setNotice(''); setError(''); };

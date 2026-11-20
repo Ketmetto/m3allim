@@ -7,7 +7,9 @@ export function Dropdown({ trigger, children, align = 'right', width = 320 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const { pathname } = useLocation();
-  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
   useEffect(() => {
     if (!open) return;
     const onDown = (e) => ref.current && !ref.current.contains(e.target) && setOpen(false);

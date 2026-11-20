@@ -14,7 +14,9 @@ export function MobileMenu({ links, logoTo }) {
   const { account, role, signOut } = useAuth();
   const { unreadMessages, unreadNotifications } = useLive();
   const close = () => setOpen(false);
-  useEffect(close, [pathname]);
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === 'Escape' && close();

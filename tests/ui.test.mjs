@@ -16,8 +16,9 @@ for (const k of ['window', 'document', 'navigator', 'localStorage', 'sessionStor
   try { Object.defineProperty(g, k, { value: dom.window[k], configurable: true, writable: true }); } catch {}
 }
 g.IS_REACT_ACT_ENVIRONMENT = true;
-dom.window.scrollTo = () => {};
-Element.prototype.scrollIntoView = function () {};
+// Like current Chrome: scroll methods return a Promise (an effect that returns it by accident crashes React).
+dom.window.scrollTo = () => Promise.resolve();
+Element.prototype.scrollIntoView = function () { return Promise.resolve(); };
 g.fetch = async () => ({ ok: true, json: async () => ({ version: 'v2' }) });
 dom.window.fetch = g.fetch;
 g.performance = g.performance || { now: () => Date.now() };

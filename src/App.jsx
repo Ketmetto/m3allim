@@ -53,7 +53,10 @@ const only = (allow, page) => <RequireRole allow={allow}>{page}</RequireRole>;
 
 function ScrollToTop() {
   const { pathname } = useLocation();
-  useEffect(() => window.scrollTo(0, 0), [pathname]);
+  // Braces matter: Chrome's scrollTo returns a Promise, and an effect may only return a clean-up function.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
   return null;
 }
 

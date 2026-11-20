@@ -15,7 +15,9 @@ export function TicketThread({ ticket, userId, viewer, onChanged, onBack }) {
   const endRef = useRef(null);
 
   useEffect(() => onTicketMessage(ticket.id, () => { reload(); onChanged?.(); }), [ticket.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => endRef.current?.scrollIntoView({ block: 'end' }), [messages?.length]);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: 'end' });
+  }, [messages?.length]);
 
   const send = async (e) => {
     e.preventDefault();

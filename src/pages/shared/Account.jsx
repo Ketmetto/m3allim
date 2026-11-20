@@ -20,7 +20,9 @@ export default function Account() {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => setForm({ name: account.name, university: account.university || '', bio: account.bio || '' }), [account.name, account.university, account.bio]);
+  useEffect(() => {
+    setForm({ name: account.name, university: account.university || '', bio: account.bio || '' });
+  }, [account.name, account.university, account.bio]);
 
   const shown = photo === undefined ? account.avatar : photo;
   const changed = photo !== undefined || JSON.stringify(form) !== JSON.stringify(initial);
