@@ -1,71 +1,97 @@
+// Reports from students and mentors (admins). Resolve, dismiss, ban the reported account, or message either side.
+// The reported person never sees who reported them; the reporter is notified when the report is handled.
 import { useState } from 'react';
-import { AdminShell } from '../../components/layout.jsx';
-import { Button, Card, Chip, DataTable, Field, Icon, Person, Select, StatusChip, Tabs } from '../../components/ui.jsx';
-import { reports as seed } from '../../data/mock.js';
+import { AdminShell } from '../../components/layout';
+import { BanDialog } from '../../components/moderation/BanDialog.jsx';
+import { Avatar, Button, Card, DataTable, DetailList, Field, FormError, Loading, Person, StatusChip, Tabs, Textarea } from '../../components/ui';
+import { useAsync } from '../../hooks/useAsync.js';
+import { useLive } from '../../context/LiveContext.jsx';
+import { decideReport, listReports } from '../../services/reports.js';
+import { fmtDateTime } from '../../utils/time.js';
+import { friendlyError } from '../../utils/format.js';
+
+const roleLabel = (p) => (p?.role === 'mentor' ? 'Mentor' : 'Student');
+const isBanned = (p) => p?.banned_at && (!p.banned_until || new Date(p.banned_until) > new Date());
 
 export default function Reports() {
-  const [list, setList] = useState(seed);
+  const { refreshWaiting } = useLive();
+  const { data: list, error: loadError, reload } = useAsync(() => listReports(), []);
   const [tab, setTab] = useState('Open');
-  const [selectedId, setSelectedId] = useState(1045);
-  const [duration, setDuration] = useState('7 days');
-  const [toast, setToast] = useState('');
+  const [selectedId, setSelectedId] = useState();
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [banning, setBanning] = useState(false);
 
-  const count = (s) => list.filter((r) => r.status === s).length;
-  const tabs = [
-    { id: 'Open', label: `Open (${count('Open')})` },
-    { id: 'Under review', label: `Under review (${2 + count('Under review')})` },
-    { id: 'Resolved', label: `Resolved (${31 + count('Resolved')})` },
-  ];
-  const rows = list.filter((r) => r.status === tab);
-  const selected = list.find((r) => r.id === selectedId) || rows[0];
+  const all = list || [];
+  const rows = all.filter((r) => r.status === tab);
+  const selected = rows.find((r) => r.id === selectedId) || rows[0];
+  const previous = selected ? all.filter((r) => r.reported_id === selected.reported_id && r.id !== selected.id).length : 0;
 
-  const act = (status, message) => {
-    setList((all) => all.map((r) => (r.id === selected.id ? { ...r, status } : r)));
-    setToast(message);
-    const next = list.find((r) => r.status === 'Open' && r.id !== selected.id);
-    if (next) setSelectedId(next.id);
+  const decide = async (status, extraNote) => {
+    setBusy(true); setError('');
+    try {
+      await decideReport(selected.id, status, [note.trim(), extraNote].filter(Boolean).join(' · '));
+      await reload();
+      refreshWaiting();
+      setNote(''); setSelectedId(undefined);
+    } catch (e) {
+      setError(friendlyError(e));
+    }
+    setBusy(false);
   };
 
-  const cols = [
-    { key: 'user', label: 'REPORTED USER', width: 190, render: (r) => <Person name={r.user} sub={r.role} size={36} /> },
-    { key: 'reason', label: 'REASON' },
-    { key: 'date', label: 'DATE', width: 110 },
-    { key: 'priority', label: 'PRIORITY', width: 100, render: (r) => <StatusChip status={r.priority} /> },
-  ];
-
   return (
-    <AdminShell title="Reports" sub="Review reports from students and mentors and take action">
-      <Tabs items={tabs} active={tab} onChange={setTab} />
-      {toast && <div className="toast" role="status"><Icon name="Check" size={16} /> {toast}<button className="link" onClick={() => setToast('')}>Dismiss</button></div>}
+    <AdminShell title="Reports" sub="Reports from students and mentors. The reported person never sees who reported them.">
+      <Tabs items={['Open', 'Resolved', 'Dismissed'].map((s) => ({ id: s, label: `${s} (${all.filter((r) => r.status === s).length})` }))} active={tab} onChange={(t) => { setTab(t); setSelectedId(undefined); }} />
+      {loadError && <p className="error" role="alert">{loadError}</p>}
       <div className="split-main-panel">
         <Card pad={0} className="table-card">
-          {rows.length ? <DataTable columns={cols} rows={rows} selectedId={selected?.id} onRowClick={(r) => setSelectedId(r.id)} /> : <div className="center muted" style={{ padding: 48 }}>No reports in this tab.</div>}
+          {!list ? <Loading text="Loading reports…" /> : rows.length ? (
+            <DataTable columns={[
+              { key: 'reported', label: 'REPORTED', render: (r) => <Person name={r.reported?.full_name || 'Deleted account'} sub={roleLabel(r.reported)} src={r.reported?.avatar_url} /> },
+              { key: 'reason', label: 'REASON', width: 170 },
+              { key: 'created_at', label: 'FILED', width: 130, render: (r) => fmtDateTime(r.created_at) },
+            ]} rows={rows} selectedId={selected?.id} onRowClick={(r) => { setSelectedId(r.id); setNote(''); setError(''); }} />
+          ) : <div className="empty muted">No {tab.toLowerCase()} reports.</div>}
         </Card>
-
         {selected && (
-          <Card pad={28} className="col gap-18 panel">
-            <div className="row between"><h2 className="h3">Report #{selected.id}</h2><Chip kind={selected.priority === 'High' ? 'red' : selected.priority === 'Medium' ? 'gold' : 'gray'}>{selected.priority} priority</Chip></div>
-            <Person name={selected.user} sub={`${selected.role} · joined ${selected.joined} · ${selected.previous} previous reports`} size={48} />
-            <hr className="hr" />
-            <div className="col gap-10 sm">
-              <div className="row between"><span className="muted">Reason</span><span className="medium">{selected.reason}</span></div>
-              <div className="row between"><span className="muted">Reported by</span><span className="medium">{selected.by}</span></div>
-              <div className="row between"><span className="muted">Submitted</span><span className="medium">{selected.date}</span></div>
+          <Card pad={28} className="col gap-20 panel">
+            <div className="row between"><h2 className="h3">Report #{selected.id}</h2><StatusChip status={selected.status} /></div>
+            <div className="row gap-14">
+              <Avatar name={selected.reported?.full_name || '?'} src={selected.reported?.avatar_url} size={56} />
+              <div className="col gap-4 min0"><span className="h3">{selected.reported?.full_name}</span><span className="sm muted">{roleLabel(selected.reported)} · reported for “{selected.reason}”</span>{isBanned(selected.reported) && <StatusChip status="Banned" />}</div>
             </div>
-            <h3 className="semibold">Description</h3>
-            <p className="quote-box">“{selected.description}”</p>
-            <div className="doc-row"><Icon name="FileText" size={18} color="var(--teal)" /><div className="col fill"><span className="sm medium">Evidence</span><span className="xs muted">{selected.evidence}</span></div><button className="link">View</button></div>
-            <Field label="Ban duration (if applicable)"><Select value={duration} onChange={setDuration} options={['24 hours', '7 days', '30 days', 'Permanent']} /></Field>
+            <DetailList rows={[
+              ['Reported by', `${selected.reporter?.full_name || 'Deleted account'} (${roleLabel(selected.reporter).toLowerCase()})`],
+              ['Filed', fmtDateTime(selected.created_at)],
+              ['Session', selected.session_id ? `#${selected.session_id}` : null],
+              ['Other reports about them', String(previous)],
+            ]} />
+            <div className="col gap-6"><span className="xs muted">What happened</span><p className="quote-box">{selected.details || 'No details given.'}</p></div>
+            <div className="row gap-8 wrap">
+              <Button variant="ghost-border" size="sm" icon="MessageCircle" to={`/messages?with=${selected.reported_id}`}>Message reported</Button>
+              <Button variant="ghost-border" size="sm" icon="MessageCircle" to={`/messages?with=${selected.reporter_id}`}>Message reporter</Button>
+            </div>
             {selected.status === 'Open' ? (
               <>
-                <Button variant="danger" size="lg" icon="Ban" onClick={() => act('Resolved', `${selected.user} banned for ${duration.toLowerCase()}.`)}>Ban user</Button>
-                <div className="row gap-12"><Button variant="outline" className="fill" onClick={() => act('Resolved', `Warning sent to ${selected.user}.`)}>Send warning</Button><Button variant="ghost-border" className="fill" onClick={() => act('Resolved', `Report #${selected.id} dismissed.`)}>Dismiss</Button></div>
+                <Field label="Internal note" hint="Saved with the report and in the audit log."><Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="What you did, e.g. warned the user by message" /></Field>
+                <FormError>{error}</FormError>
+                {!isBanned(selected.reported) && <Button variant="danger" icon="Ban" disabled={busy} onClick={() => setBanning(true)}>Ban {roleLabel(selected.reported).toLowerCase()} and resolve</Button>}
+                <div className="row gap-12"><Button className="fill" icon="Check" disabled={busy} onClick={() => decide('Resolved')}>Mark resolved</Button><Button variant="outline" disabled={busy} onClick={() => decide('Dismissed')}>Dismiss</Button></div>
               </>
-            ) : <p className="sm muted center">This report is {selected.status.toLowerCase()}.</p>}
-            <p className="xs muted center">Every action is recorded in the audit log.</p>
+            ) : selected.admin_note && <div className="col gap-6"><span className="xs muted">Note</span><p className="sm">{selected.admin_note}</p></div>}
           </Card>
         )}
       </div>
+      {banning && selected && (
+        <BanDialog
+          person={{ id: selected.reported_id, name: selected.reported?.full_name || 'this account' }}
+          defaultReason={selected.reason}
+          onClose={() => setBanning(false)}
+          onDone={() => decide('Resolved', 'Account banned')}
+        />
+      )}
     </AdminShell>
   );
 }

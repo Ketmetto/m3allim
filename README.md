@@ -1,66 +1,64 @@
-# M3allim · front-end prototype
+# M3allim · معلّم
 
-React + Vite implementation of the M3allim Figma file: free, verified, one-to-one mentorship for students and graduates in Lebanon.
-Accounts, mentor applications and document uploads run on [Supabase](https://supabase.com) once it is connected (see **Backend setup** below). Everything else is sample data in `src/data/mock.js`. Without Supabase the whole site still runs as a browser-only demo.
+Free, verified, one-to-one mentorship for students and graduates in Lebanon.
+Students find a verified professional, request a video session at a time that suits both, chat, and leave a review.
+Mentors apply with their ID, CV and cover letter, and are verified by the M3allim team before they appear.
+
+Built with **React + Vite** (website) and **Supabase** (Postgres database, accounts, file storage, live updates).
+
+| Read next | What's inside |
+|---|---|
+| [docs/ROLES.md](docs/ROLES.md) | The five roles, everything each one can do, and where it lives in the code |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the code is organised and how a request travels from a button to the database |
+| [docs/DATABASE.md](docs/DATABASE.md) | Every table, the security rules, and the automatic triggers |
+
+## The roles at a glance
+
+| Role | In one line |
+|---|---|
+| **Guest** | Browses mentors, reads profiles and ratings; can sign up or log in, but can't book or chat |
+| **Student** | Requests sessions in a mentor's free hours, reschedules, chats, joins the video call, rates, saves mentors, reports, gets notifications |
+| **Mentor** | Verifies identity (ID or passport, CV, cover letter), builds a profile, sets weekly availability, accepts or declines, chats, sees reviews, reports |
+| **Admin** | Verifies mentors, handles reports and support, chats with anyone, bans and unbans, sends announcements |
+| **Super admin** | Everything an admin can do, plus managing admins, platform settings, maintenance mode, system health and the audit log |
 
 ## Run it
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # production build in /dist
-node smoke-test.mjs  # renders every route on the server to catch runtime errors
+npm run dev          # http://localhost:5173
+npm test             # database rules + every page for every role (about a minute)
+npm run build        # production build in /dist
 ```
 
-Open `http://localhost:5173/#/screens` for an index of every screen.
-
-## Screens (routes)
-
-| Area | Route | Figma screen |
-|---|---|---|
-| Public | `/` | Landing page |
-| Public | `/mentors` | Browse mentors (working search + filters) |
-| Public | `/mentors/:id` | Mentor profile (day, time and goal pickers) |
-| Booking | `/book/:id` | Confirm booking (free, no payment) |
-| Booking | `/book/:id/confirmed` | Booking confirmed |
-| Account | `/login`, `/signup` | Log in / sign up (email + Google) |
-| Account | `/welcome` | Pick student or mentor (first Google sign-in) |
-| Account | `/reset-password` | Set a new password (from the reset email) |
-| Account | `/account` | Your profile: name and photo (opens from your name in the navigation) |
-| Mentor | `/mentor/apply` | Mentor application: phone, emails, CV, cover letter |
-| Mentor | `/mentor/status` | Application status |
-| Student | `/student` | Dashboard |
-| Student | `/student/sessions` | My sessions (tabs, cancel, rate) |
-| Student | `/student/messages` | Messages (send a message) |
-| Admin | `/admin` | Overview |
-| Admin | `/admin/verification` | Mentor verification (approve / reject) |
-| Admin | `/admin/reports` | Reports (warn / dismiss / ban) |
-| Admin | `/admin/users` | Users (ban / unban) |
-| Admin | `/admin/announcements` | Announcements (compose + send) |
-| Super admin | `/super` | Platform overview (maintenance toggle) |
-| Super admin | `/super/verification` | Review mentor applications, open CV / cover letter, approve or decline via Gmail |
-| Super admin | `/super/admins` | Manage admins (invite / suspend / remove) |
-| Super admin | `/super/settings` | Platform settings |
-| Super admin | `/super/audit` | Audit log & export (real CSV downloads) |
+The website needs its Supabase project (see **Backend setup**). Put the keys in `.env.local` (template: `.env.example`).
 
 ## Project structure
 
 ```
 src/
-  App.jsx                 routes
-  styles/global.css       design tokens (colors, type) + all component styles
-  components/ui.jsx       Button, Chip, Card, Table, Tabs, Toggle, Field, Avatar ...
-  components/layout.jsx   navigation bars, footer, admin / super admin sidebar shell
-  components/MentorCard.jsx
-  components/icons.js     the lucide icons in use (add new ones here)
-  components/auth.jsx     Google button, sign-in redirect handler, route guards
-  lib/supabase.js         Supabase client (null when not configured)
-  lib/auth.js             sign-in / sign-up helpers, where to send someone after login
-  data/mock.js            all sample data
-  data/applications.js    mentor applications (Supabase, or browser storage in demo mode)
-  pages/public | student | mentor | admin | superadmin
-supabase/schema.sql       database tables, file bucket and access rules
-  utils/csv.js            CSV download helper
+  main.jsx              entry point: router + the three app-wide providers
+  App.jsx               every page and which roles may open it (start here)
+  config/               roles, menus per role, lists and limits
+  services/             every database call, one file per feature (the only code that talks to Supabase)
+  context/              who is signed in, platform settings, live notification counts
+  hooks/                reusable React logic: loading data, live sessions, chat, saved mentors
+  components/
+    ui/                 design system: Button, Card, Field, Modal, DataTable…
+    layout/             top bar, phone taskbar, admin sidebar, page frames
+    guards/             route protection, maintenance mode, bans
+    mentors/ sessions/ chat/ support/ notifications/ moderation/ auth/   feature pieces
+  pages/
+    guest/ auth/ student/ mentor/ admin/ super-admin/ shared/ system/   one folder per role
+  utils/                time zones, booking slots, formatting, CSV
+  styles/global.css     design tokens and all styles
+supabase/
+  schema.sql            the whole database: tables, security rules, triggers (run in the SQL editor)
+  templates/            branded emails (verify email, reset password)
+tests/
+  database.test.mjs     runs schema.sql in an in-memory Postgres and checks what each role may do
+  ui.test.mjs           opens every page as every role in a simulated browser
+docs/                   roles, architecture, database
 ```
 
 ## Backend setup (Supabase)
@@ -68,63 +66,30 @@ supabase/schema.sql       database tables, file bucket and access rules
 About 15 minutes, once.
 
 1. **Create a project** at [supabase.com](https://supabase.com) (free plan is fine).
-2. **Create the database.** Open *SQL Editor*, paste all of [`supabase/schema.sql`](supabase/schema.sql) and click *Run*. It creates the tables, the private `mentor-docs` bucket (CVs and cover letters), the public `avatars` bucket (profile photos) and the access rules. The super admin email (`kitmittofam@gmail.com`) is set near the top of that file and in `superAdmin` in `src/data/mock.js`; keep them the same.
+2. **Create the database.** Open *SQL Editor*, paste all of [`supabase/schema.sql`](supabase/schema.sql) and click *Run*. It creates every table, the private `mentor-docs` bucket (ID, CV, cover letter), the public `avatars` bucket and all access rules. The super admin's email is set near the top of that file (`super_admins`).
+   **Upgrading an existing project:** run the same file again. It only adds what's missing and refreshes the rules; existing data is kept.
 3. **Connect the site.** Copy `.env.example` to `.env.local` and fill in *Project URL* and the *anon public* key from *Project settings → API*. Restart `npm run dev`.
 4. **Allow the redirect.** *Authentication → URL Configuration*: set *Site URL* to `http://localhost:5173` and add `http://localhost:5173/**` to *Redirect URLs*. Add your real domain too when you deploy.
-5. **Email verification** is on by default (*Authentication → Sign In / Providers → Email → Confirm email*). Supabase's built-in sender only allows a few emails per hour and can't use custom templates, so before launch add your own SMTP under *Authentication → Emails → SMTP settings*. With Gmail: host `smtp.gmail.com`, port `465`, username = your Gmail address, password = a [Google app password](https://myaccount.google.com/apppasswords).
-   Then paste the branded templates from [`supabase/templates/`](supabase/templates) into *Authentication → Emails → Templates*: `confirm-signup.html` for **Confirm signup** and `reset-password.html` for **Reset password**. Their links carry a one-time token (`?token_hash=…`), so they work on any device; Supabase's default links only work in the browser where the request was made.
-6. **Google sign-in.**
-   - In [Google Cloud Console](https://console.cloud.google.com/apis/credentials): create a project, set up the *OAuth consent screen* (External, app name M3allim, your email), then *Create credentials → OAuth client ID → Web application*.
-   - *Authorized JavaScript origins*: `http://localhost:5173` (and your domain later).
-   - *Authorized redirect URIs*: `https://<your-project-id>.supabase.co/auth/v1/callback` (Supabase shows this exact URL on the Google provider page).
-   - Paste the Client ID and Client secret into Supabase *Authentication → Sign In / Providers → Google* and enable it.
+5. **Email verification** is on by default. Supabase's built-in sender only allows a few emails per hour, so before launch add your own SMTP under *Authentication → Emails → SMTP settings* (Gmail: host `smtp.gmail.com`, port `465`, your Gmail address and a [Google app password](https://myaccount.google.com/apppasswords)). Then paste [`supabase/templates/confirm-signup.html`](supabase/templates/confirm-signup.html) into **Confirm signup** and [`reset-password.html`](supabase/templates/reset-password.html) into **Reset password**. Their links work on any device.
+6. **Google sign-in.** In [Google Cloud Console](https://console.cloud.google.com/apis/credentials) create an *OAuth client ID* (Web application) with `http://localhost:5173` as an authorised origin and `https://<project-id>.supabase.co/auth/v1/callback` as the redirect URI. Paste the Client ID and secret into Supabase *Authentication → Sign In / Providers → Google*.
 
-### Names and profile photos
+### Admins
 
-Google sign-ins get their Google name and picture automatically. Email sign-ups can add a photo on the sign-up form; it is cropped to a 400×400 square in the browser and uploaded on their first sign-in (after the email is verified). Anyone can change their name or photo later on `/account`.
+- The **super admin** is whoever's email is in the `super_admins` table (set in `schema.sql`). It can only be changed in the SQL editor, never from the website.
+- **Admins** are added by the super admin on *Manage admins* (`/super/admins`), by email. They get admin access the next time they sign in with that email, whether the account already exists or not.
 
-### How the mentor flow works
+## Deploy
 
-1. A mentor signs up with email (and clicks the verification link) or with Google (already verified).
-2. On first sign-in they land on `/mentor/apply` and submit phone, an optional second email, role, experience, LinkedIn, CV and cover letter (PDF or Word, 5 MB max).
-3. The super admin opens *Mentor verification*, views the documents (private links that expire after 10 minutes), ticks the checklist and clicks *Approve* or *Decline*. The decision and note are saved, and a Gmail draft to the mentor (with the second email in CC) opens ready to send.
-4. The mentor sees the result on `/mentor/status`.
+**GitHub Pages:** [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) runs the tests, builds and publishes on every push to `main`, at `https://<user>.github.io/<repo>/`. One-time setup: *Settings → Pages → Source: GitHub Actions*; add the repository secrets `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`; add `https://<user>.github.io/<repo>/**` to Supabase *Redirect URLs*.
 
-Only emails listed in the `super_admins` table can read applications or documents; the database enforces this, not just the website.
-
-## Deploy on Render
-
-**Static Site (recommended, free, never sleeps):** New → Static Site → this repo.
-- Build command: `npm install && npm run build`
-- Publish directory: `dist`
-- Environment: add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (same values as `.env.local`).
-
-**Web Service (also works):** Start command `npm start` builds the site and serves it on Render's `PORT`. Add the same two environment variables. On the free plan a web service sleeps after 15 minutes without visitors and takes about a minute to wake up.
-
-After the first deploy, add the site address (for example `https://m3allim.onrender.com/**`) to Supabase → Authentication → URL Configuration → Redirect URLs, or sign-in links will not return to the live site.
-
-## Deploy on GitHub Pages (free)
-
-`.github/workflows/deploy-pages.yml` builds the site and publishes it on every push to `main`, at `https://<user>.github.io/<repo>/`.
-
-One-time setup on GitHub:
-1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
-2. **Settings → Secrets and variables → Actions → New repository secret**: add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (same values as `.env.local`). Without them the site runs on sample data.
-3. In Supabase → **Authentication → URL Configuration → Redirect URLs**, add `https://<user>.github.io/<repo>/**` so sign-in and password reset links work there.
-4. **Actions → Deploy to GitHub Pages → Run workflow** (or push any commit).
+**Render (Static Site):** build command `npm install && npm run build`, publish directory `dist`, same two environment variables, and add the Render address to Supabase *Redirect URLs*.
 
 ## Design tokens
 
-Teal `#0d7377`, deep teal `#084f52`, tint `#eaf5f3`, gold `#d4a017`, ink `#1a1a2e`, gray `#6b7280`, border `#e4e8ed`, background `#f5f7fa`. Font: Inter (Noto Sans Arabic for the wordmark). Edit them in `:root` in `src/styles/global.css`.
-
-## Mentor photos
-
-Avatars fall back to initials. To show photos, add files to `public/avatars/`: `layla.jpg`, `karim.jpg`, `nour.jpg`, `rami.jpg`, `mira.jpg`, `jad.jpg`, `sarah.jpg`.
+Teal `#0d7377`, deep teal `#084f52`, tint `#eaf5f3`, gold `#d4a017`, ink `#1a1a2e`, gray `#6b7280`. Font: Inter (Noto Sans Arabic for the wordmark). Edit them in `:root` in `src/styles/global.css`.
 
 ## Not built yet
 
-- Mentor interface (profile builder, availability, accept / decline requests). It has no Figma screens yet.
-- Student sessions, messages, browsing and booking still use sample data (the student’s own name and photo are real). Approved mentors don’t appear in *Find a mentor* yet.
-- Admin roles other than the super admin (the admin pages are limited to the super admin once Supabase is connected).
-- Arabic / RTL version.
-- The profile, browse and landing copy was rebuilt from the Figma file and may differ slightly from the original wording.
+- Arabic / right-to-left version.
+- Email (not just in-app) notifications for session updates; Supabase sends only account emails today.
+- Recurring sessions and calendar (.ics) invites.
